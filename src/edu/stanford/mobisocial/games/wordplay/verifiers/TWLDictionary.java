@@ -86,6 +86,7 @@ public class TWLDictionary implements Dictionary{
 		
 		byte[] buffer = new byte[1 + fixed_width_length];
 		referenceFile.seek(index * (1 + fixed_width_length));
+		Log.w(TAG, "index: " + index);
 		int read = referenceFile.read(buffer);
 		if (read != buffer.length) {
 			throw new IOException("Error reading word. Read " + read + ", expected " + buffer.length);
@@ -95,13 +96,14 @@ public class TWLDictionary implements Dictionary{
 	}
 	
 	public boolean isWord(String word) {
+		word = word.toLowerCase();
 		if (word.length() < 2) {
 			Log.w(TAG, "too short");
 			return false;
 		}
 		
 		try {
-			return binarySearch(0, (int)numWords-1, word) >= 0;
+			return binarySearch(0, (int)numWords-2, word) >= 0;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

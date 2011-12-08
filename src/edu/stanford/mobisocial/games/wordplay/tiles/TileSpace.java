@@ -10,15 +10,17 @@ import edu.stanford.mobisocial.games.wordplay.constants.LetterValues;
 
 public abstract class TileSpace {
 	protected int x, y;
+	protected int points;
 	protected int tileModifier;
 	protected int wordModifier;
-	protected Sprite tile, letterTile;
+	protected Sprite tile, letterTile, overlay;
 	protected char letter;
 	
 	public TileSpace(int x, int y) {
 		this.x = x;
 		this.y = y;
 		letter = '0';
+		points = 0;
 		tileModifier = 1;
 		wordModifier = 1;
 	}
@@ -27,8 +29,16 @@ public abstract class TileSpace {
 		scene.attachChild(tile);
 	}
 	
+	public void setPoints(int points) {
+		this.points = points;
+	}
 	public int getPoints() {
-		return tileModifier*LetterValues.getLetterValue(letter);
+		if (Character.isUpperCase(letter)) {
+			return 0;
+		}
+		else {
+			return tileModifier*LetterValues.getLetterValue(letter);
+		}
 	}
 	
 	public int getMultiplier() {
@@ -46,8 +56,14 @@ public abstract class TileSpace {
             public void run() {
         		scene.detachChild(TileSpace.this.tile);
         		Log.w("tilespace", "finalizing: " + letter);
-        		TileSpace.this.letterTile = new Sprite(x, y, (TextureRegion) context.letterTileRegions.get(Character.valueOf(letter)));
+        		TileSpace.this.letterTile = new Sprite(x, y, (TextureRegion) context.letterTileRegions.get(Character.toLowerCase(letter)));
+        		TileSpace.this.letterTile.setWidth(21);
+        		TileSpace.this.letterTile.setHeight(21);
+        		TileSpace.this.overlay = new Sprite(x, y, context.pointTileRegions[getPoints()]);
+        		TileSpace.this.overlay.setWidth(21);
+        		TileSpace.this.overlay.setHeight(21);
         		scene.attachChild(TileSpace.this.letterTile);
+        		scene.attachChild(TileSpace.this.overlay);
             }
     	});
 	}

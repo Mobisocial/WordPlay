@@ -3,14 +3,12 @@ package edu.stanford.mobisocial.games.wordplay;
 import java.util.Arrays;
 import java.util.Collections;
 
-import android.util.Log;
+import org.json.JSONArray;
 
 public class TileBag {
 	private Character bag[];
-	private int nextTile;
 	
 	public TileBag() {
-		
 		bag = new Character[] {'a','a','a','a','a','a','a','a','a',
 				'b','b',
 				'c','c',
@@ -38,7 +36,7 @@ public class TileBag {
 				'y','y',
 				'z',
 				' ',' '};
-		nextTile = 0;
+		
 		shuffle();
 	}
 
@@ -47,15 +45,48 @@ public class TileBag {
 	}
 	
 	public char getNextTile() {
-		if (nextTile == bag.length) {
+		if (bag.length == 0) {
 			return '0';
 		}
-		char tile = bag[nextTile].charValue();
-		nextTile++;
+		char tile = bag[0].charValue();
+		//nextTile++;
+		
+		Character[] original = bag;
+		bag = Arrays.copyOfRange(original, 1, original.length);
+		
 		return tile;
 	}
 	
+	public Character[] swapTiles(Character[] tiles) {
+		for(int i = 0; i < tiles.length; i++) {
+			if (i >= bag.length) {
+				break;
+			}
+			Character temp = bag[i];
+			bag[i] = tiles[i];
+			tiles[i] = temp;
+		}
+		this.shuffle();
+		return tiles;
+	}
+	
 	public int tilesRemaining() {
-		return bag.length-nextTile;
+		return bag.length;
+	}
+	
+	public JSONArray toJson() {
+
+        JSONArray boardJson = new JSONArray();
+		for(int i = 0; i < bag.length; i++) {
+			boardJson.put(bag[i] + "");
+		}
+		return boardJson;
+	}
+	
+	public void fromJson(JSONArray boardJson) {
+		bag = new Character[boardJson.length()];
+		for (int i = 0; i < boardJson.length(); i++) {
+			bag[i] = new Character(boardJson.optString(i).charAt(0));
+		}
 	}
 }

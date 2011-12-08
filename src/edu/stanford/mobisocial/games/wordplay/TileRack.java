@@ -1,7 +1,11 @@
 package edu.stanford.mobisocial.games.wordplay;
 
+import java.util.Random;
+
 import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.sprite.Sprite;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import android.graphics.Point;
 import android.util.Log;
@@ -10,15 +14,54 @@ import edu.stanford.mobisocial.games.wordplay.tiles.Tile;
 public class TileRack {
 	Tile tiles[];
 	int numTiles;
+	boolean showMe;
 	
 	public static final String TAG = "TileRack";
 	WordPlayActivity context;
 	
-	public TileRack(WordPlayActivity context) {
+	public TileRack(WordPlayActivity context, boolean showme) {
 		tiles = new Tile[7];
 		this.context = context;
 		for (int i = 0; i < 7; i++) {
 			tiles[i] = null;
+		}
+		numTiles = 0;
+		showMe = showme;
+	}
+	
+	public JSONArray toJson() {
+		JSONArray tilesJson = new JSONArray();
+		for (int i = 0; i < 7; i++) {
+			if (tiles[i] != null) {
+				tilesJson.put(tiles[i].getLetter()+"");
+			}
+			else {
+				tilesJson.put("?");
+			}
+		}
+		return tilesJson;
+	}
+	
+	public void fromJson(Scene scene, JSONArray tilesJson) {
+		try {
+			for (int i = 0; i < 7; i++) {
+				if (tiles[i] != null) {
+					tiles[i].removeTile();
+				}
+			}
+			tiles = new Tile[7];
+			numTiles = 0;
+			for(int i = 0; i < 7; i++) {
+				if(tilesJson == null) { Log.w("tilerack", "WTF: " + tilesJson.toString());}
+				if (!tilesJson.getString(i).equals("?")) {
+					Log.w("tilerack", "inserting " + tilesJson.getString(i).charAt(0));
+					this.addTile(scene, tilesJson.getString(i).charAt(0));
+					//this.insertTileAtPos(scene, new Tile(context, scene, tilesJson.getString(i).charAt(0), i, showMe), i);
+				}
+			} 
+		}catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -246,6 +289,7 @@ public class TileRack {
 				Point coordinates = tiles[i].getCoordinates();
 				if (coordinates != null) {
 					context.tileSpaces[coordinates.x][coordinates.y].setLetter(tiles[i].getLetter());
+					context.tileSpaces[coordinates.x][coordinates.y].setPoints(tiles[i].getPoints());
 					//tiles[i].finalizeTile();
 					//tiles[i] = null;
 					//numTiles--;
@@ -254,6 +298,7 @@ public class TileRack {
 		}
 		return wordCoordinates;
 	}
+	
 	
 	public void unsetLetters(Scene scene) {
 
@@ -266,6 +311,19 @@ public class TileRack {
 				}
 			}
 		}
+	}
+	
+	public boolean isBingo() {
+		int tilesUsed = 0;
+		for (int i = 0; i < 7; i++) {
+			if (tiles[i] != null) {
+				Point coordinates = tiles[i].getCoordinates();
+				if (coordinates != null) {
+					tilesUsed++;
+				}
+			}
+		}
+		return tilesUsed == 7;
 	}
 	
 	public void finalizeTiles(Scene scene) {
@@ -290,11 +348,25 @@ public class TileRack {
 		}
 	}
 	
+	public void shuffleTiles(Scene scene) {
+		Random r = new Random();
+		for (int i = 0; i < 7; i++) {
+			if (tiles[i] != null) {
+				this.insertTileAtPos(scene, tiles[i], r.nextInt(7));
+			}
+		}
+	}
+	
+	public void replaceTile(Scene scene, char letter, int pos) {
+		tiles[pos].removeTile();
+		tiles[pos] = new Tile(context, scene, letter, pos, showMe);
+	}
+	
 	public void addTile(Scene scene, char letter) {
 		int i = freePos();
 		
 		if (i >= 0 && i < 7) {
-			tiles[i] = new Tile(context, scene, letter, i);
+			tiles[i] = new Tile(context, scene, letter, i, showMe);
 			numTiles++;
 		}
 	}
@@ -303,12 +375,13 @@ public class TileRack {
 		return numTiles;
 	}
 	
-	public boolean noOverlaps(int pos) {
+	/*public boolean noOverlaps(int pos) {
 		if(tiles[pos] == null) return true;
 		Sprite srcTile = tiles[pos].getSprite();
 		float srcX = srcTile.getX()+10;
 		float srcY = srcTile.getY()+10;
 		for(int i = 0; i < 7; i++) {
+			
 			if (i == pos || tiles[i] == null) {
 				continue;
 			}
@@ -330,10 +403,25 @@ public class TileRack {
 			return false;
 		}
 		return true;
+	}*/
+	public boolean noOverlaps(int pos, int testX, int testY) {
+		if(tiles[pos] == null) return true;
+		for(int i = 0; i < 7; i++) {
+			Log.w(TAG, "comparing " + pos + " to " + i);
+			if (pos != i && tiles[i] != null && tiles[i].overlaps(testX, testY)) {
+				Log.w(TAG, "found overlap");
+				return false;
+			}
+			Log.w(TAG, "no overlap");
+		}
+		return true;
 	}
 	
 	public void insertTileAtPos(Scene scene, Tile tile, int pos) {
 		//attempting to move to same spot, no need to change
+		if(pos < 0 || pos > 6) {
+			return;
+		}
 		Log.w(TAG, "moving " + tile.getPos() + " to " + pos);
 		if (tile.getPos() == pos) {
 			tile.setPos(pos);

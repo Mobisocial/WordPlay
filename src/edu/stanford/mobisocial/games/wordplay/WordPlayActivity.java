@@ -3,8 +3,11 @@ package edu.stanford.mobisocial.games.wordplay;
 import java.util.Calendar;
 import java.util.HashMap;
 
-import mobisocial.socialkit.Dungbeetle;
-import mobisocial.socialkit.Dungbeetle.StateObserver;
+import mobisocial.socialkit.User;
+import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.musubi.multiplayer.FeedRenderable;
+import mobisocial.socialkit.musubi.multiplayer.TurnBasedMultiplayer;
+import mobisocial.socialkit.musubi.multiplayer.TurnBasedMultiplayer.StateObserver;
 
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.ZoomCamera;
@@ -15,8 +18,8 @@ import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolic
 import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.Scene.IOnSceneTouchListener;
 import org.anddev.andengine.entity.scene.background.ColorBackground;
+import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.entity.text.ChangeableText;
-import org.anddev.andengine.entity.util.FPSLogger;
 import org.anddev.andengine.input.touch.TouchEvent;
 import org.anddev.andengine.input.touch.detector.ScrollDetector;
 import org.anddev.andengine.input.touch.detector.ScrollDetector.IScrollDetectorListener;
@@ -32,15 +35,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Window;
 import android.widget.Toast;
 import edu.stanford.mobisocial.games.wordplay.buttons.Button;
 import edu.stanford.mobisocial.games.wordplay.constants.BoardLayout;
+import edu.stanford.mobisocial.games.wordplay.players.Player;
 import edu.stanford.mobisocial.games.wordplay.tiles.BasicTileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.DoubleLetterTileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.DoubleWordTileSpace;
@@ -63,26 +72,34 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	// ===========================================================
 	// Fields
 	// ===========================================================
-	private ZoomCamera mCamera;
+	public ZoomCamera mCamera;
 	
-	public HUD hud;
+	public HUD hud, tilePickerHud;
 	
 	private BitmapTextureAtlas mTexture;
-	private BitmapTextureAtlas startTile, baseTile, doubleLetterTile, tripleLetterTile, doubleWordTile, tripleWordTile;
+	private BitmapTextureAtlas  startTile, baseTile, doubleLetterTile, tripleLetterTile, doubleWordTile, tripleWordTile;
 	public TextureRegion startTileRegion, baseTileRegion, doubleLetterTileRegion, tripleLetterTileRegion, doubleWordTileRegion, tripleWordTileRegion;
 	
 	private BitmapTextureAtlas aTile, bTile, cTile, dTile, eTile, fTile, gTile, hTile, iTile, jTile, kTile, lTile, mTile, nTile, oTile, pTile, qTile, rTile, sTile, tTile, uTile, vTile, wTile, xTile, yTile, zTile, blankTile;
 	public HashMap<Character, TextureRegion> letterTileRegions;
 	
-	private BitmapTextureAtlas playButtonTexture, shuffleButtonTexture, clearButtonTexture, swapButtonTexture, passButtonTexture;
-	private TiledTextureRegion playButtonRegion, shuffleButtonRegion, clearButtonRegion, swapButtonRegion, passButtonRegion;
+	private BitmapTextureAtlas point0Tile, point1Tile, point2Tile, point3Tile, point4Tile, point5Tile, point6Tile, point7Tile, point8Tile, point9Tile, point10Tile;
+	public TextureRegion pointTileRegions[];
 	
-	private TextureRegion mFaceTextureRegion;
+	private BitmapTextureAtlas tileOverlayTexture, confirmButtonTexture, cancelButtonTexture, playButtonTexture, shuffleButtonTexture, clearButtonTexture, swapButtonTexture, passButtonTexture;
+	private TiledTextureRegion tileOverlayRegion, confirmButtonRegion, cancelButtonRegion, playButtonRegion, shuffleButtonRegion, clearButtonRegion, swapButtonRegion, passButtonRegion;
+	
+	
+	private BitmapTextureAtlas horizontalCrosshairTexture, verticalCrosshairTexture;
+	private TextureRegion horizontalCrosshairRegion, verticalCrosshairRegion;
+	
+	public BitmapTextureAtlas activeOverlayTexture;
+	public TextureRegion activeOverlayRegion;
+	
     public TileSpace[][] tileSpaces;
     public TileRack tileRack;
 	private SurfaceScrollDetector mScrollDetector;
     
-	boolean firstPlay;
 	public Point startCoordinate;
 	
 	public TileBag bag;
@@ -95,11 +112,29 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
 	Scene scene;
 	
+	public boolean showingPicker;
+	public boolean gameOver;
 
 	public long lastTap;
 	
+	Button playButton, clearButton, shuffleButton, swapButton, passButton;
+	
 
-    Dungbeetle mDungBeetle;
+	Player players[];
+	int numPlayers;
+	int passCount;
+	
+    Musubi mMusubi;
+    //Feed mFeed;
+    User musubiMe;
+    
+    String lastMove = "";
+
+    private Sprite xCross, yCross;
+    
+    private TurnBasedMultiplayer mMultiplayer;
+    boolean isHost;
+    ChangeableText titleText, player1Score, player2Score, player3Score, player4Score, tileCount;
 	// ===========================================================
 	// Constructors
 	// ===========================================================
@@ -116,22 +151,29 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	public Engine onLoadEngine() {
 		//this.mCamera = new SmoothCamera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT, 1, 1, 5.0f);
 		hud = new HUD();
-		firstPlay = true;
+		gameOver = false;
+		showingPicker = false;
 		startCoordinate = null;
 
 		this.mCamera = new ZoomCamera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);  
-		final int alturaTotal = CAMERA_HEIGHT*3;
+		//final int alturaTotal = CAMERA_HEIGHT*3;
 		this.mCamera.setBounds(0, CAMERA_WIDTH, 0, CAMERA_HEIGHT);
 		this.mCamera.setBoundsEnabled(true);
 		
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		return new Engine(new EngineOptions(false, ScreenOrientation.PORTRAIT, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), this.mCamera));
+		ScreenOrientation deviceOrientation = ScreenOrientation.PORTRAIT;
+		int screenLayout = getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK;
+		if (screenLayout == Configuration.SCREENLAYOUT_SIZE_LARGE ||
+		        screenLayout == Configuration.SCREENLAYOUT_SIZE_XLARGE) {
+		    deviceOrientation = ScreenOrientation.LANDSCAPE;
+		}
+		return new Engine(new EngineOptions(false, deviceOrientation, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), this.mCamera));
+		//return new Engine(new EngineOptions(false, ScreenOrientation.PORTRAIT, new RatioResolutionPolicy(CAMERA_WIDTH, CAMERA_HEIGHT), this.mCamera));
 	}
 
 	@Override
 	public void onLoadResources() {
 		this.mTexture = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.mFaceTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.mTexture, this, "gfx/ui_ball_1.png", 0, 0);
 		
 		this.mEngine.getTextureManager().loadTexture(this.mTexture);
 		
@@ -143,33 +185,46 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		this.doubleWordTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 		this.tripleWordTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 
-		this.aTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.bTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.cTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.dTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.eTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.fTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.gTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.hTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.iTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.jTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.kTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.lTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.mTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.nTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.oTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.pTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.qTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.rTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.sTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.tTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.uTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.vTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.wTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.xTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.yTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.zTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.blankTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		
+		this.aTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.bTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.cTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.dTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.eTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.fTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.gTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.hTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.iTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.jTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.kTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.lTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.mTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.nTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.oTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.pTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.qTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.rTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.sTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.tTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.uTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.vTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.wTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.xTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.yTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.zTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.blankTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+
+		this.point1Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point0Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point2Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point3Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point4Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point5Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point6Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point7Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point8Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point9Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.point10Tile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 
 		this.startTileRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.startTile, this, "gfx/start_tile.png", 0, 0);
 		this.baseTileRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.baseTile, this, "gfx/tile_base.png", 0, 0);
@@ -178,7 +233,24 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		this.doubleWordTileRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.doubleWordTile, this, "gfx/double_word_tile.png", 0, 0);
 		this.tripleWordTileRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.tripleWordTile, this, "gfx/triple_word_tile.png", 0, 0);
 
+		activeOverlayTexture = new BitmapTextureAtlas(64, 64, TextureOptions.DEFAULT);
+		activeOverlayRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(activeOverlayTexture, this, "gfx/active_tile.png", 0, 0);
 		
+		
+		horizontalCrosshairTexture = new BitmapTextureAtlas(512, 512, TextureOptions.DEFAULT);
+		horizontalCrosshairRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(horizontalCrosshairTexture, this, "gfx/horizontal_crosshair.png", 0, 0);
+		verticalCrosshairTexture = new BitmapTextureAtlas(512, 512, TextureOptions.DEFAULT);
+		verticalCrosshairRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(verticalCrosshairTexture, this, "gfx/vertical_crosshair.png", 0, 0);
+
+
+		tileOverlayTexture = new BitmapTextureAtlas(256, 256, TextureOptions.DEFAULT);
+		tileOverlayRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(tileOverlayTexture, this, "gfx/tile_overlay.png", 0, 0, 1, 1);
+
+		confirmButtonTexture = new BitmapTextureAtlas(256, 256, TextureOptions.DEFAULT);
+		confirmButtonRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(confirmButtonTexture, this, "gfx/confirm_button.png", 0, 0, 3, 1);
+
+		cancelButtonTexture = new BitmapTextureAtlas(256, 256, TextureOptions.DEFAULT);
+		cancelButtonRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(cancelButtonTexture, this, "gfx/cancel_button.png", 0, 0, 3, 1);
 
 		playButtonTexture = new BitmapTextureAtlas(256, 256, TextureOptions.DEFAULT);
 		playButtonRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(playButtonTexture, this, "gfx/play_button.png", 0, 0, 3, 1);
@@ -224,6 +296,26 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		letterTileRegions.put('z', BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.zTile, this, "gfx/z_tile.png", 0, 0));
 		letterTileRegions.put(' ', BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.blankTile, this, "gfx/blank_tile.png", 0, 0));
 
+		pointTileRegions = new TextureRegion[11];
+		pointTileRegions[0] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point0Tile, this, "gfx/point_0.png", 0, 0);
+		pointTileRegions[1] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point1Tile, this, "gfx/point_1.png", 0, 0);
+		pointTileRegions[2] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point2Tile, this, "gfx/point_2.png", 0, 0);
+		pointTileRegions[3] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point3Tile, this, "gfx/point_3.png", 0, 0);
+		pointTileRegions[4] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point4Tile, this, "gfx/point_4.png", 0, 0);
+		pointTileRegions[5] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point5Tile, this, "gfx/point_5.png", 0, 0);
+		pointTileRegions[6] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point6Tile, this, "gfx/point_6.png", 0, 0);
+		pointTileRegions[7] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point7Tile, this, "gfx/point_7.png", 0, 0);
+		pointTileRegions[8] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point8Tile, this, "gfx/point_8.png", 0, 0);
+		pointTileRegions[9] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point9Tile, this, "gfx/point_9.png", 0, 0);
+		pointTileRegions[10] = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.point10Tile, this, "gfx/point_10.png", 0, 0);
+
+		this.mEngine.getTextureManager().loadTexture(activeOverlayTexture);
+
+		this.mEngine.getTextureManager().loadTexture(horizontalCrosshairTexture);
+		this.mEngine.getTextureManager().loadTexture(verticalCrosshairTexture);
+		
+		this.mEngine.getTextureManager().loadTexture(confirmButtonTexture);
+		this.mEngine.getTextureManager().loadTexture(cancelButtonTexture);
 		this.mEngine.getTextureManager().loadTexture(playButtonTexture);
 		this.mEngine.getTextureManager().loadTexture(passButtonTexture);
 		this.mEngine.getTextureManager().loadTexture(shuffleButtonTexture);
@@ -237,6 +329,8 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		this.mEngine.getTextureManager().loadTexture(this.doubleWordTile);
 		this.mEngine.getTextureManager().loadTexture(this.tripleWordTile);
 
+		this.mEngine.getTextureManager().loadTexture(tileOverlayTexture);
+		
 		this.mEngine.getTextureManager().loadTexture(aTile);
 		this.mEngine.getTextureManager().loadTexture(bTile);
 		this.mEngine.getTextureManager().loadTexture(cTile);
@@ -264,6 +358,18 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		this.mEngine.getTextureManager().loadTexture(yTile);
 		this.mEngine.getTextureManager().loadTexture(zTile);
 		this.mEngine.getTextureManager().loadTexture(blankTile);
+
+		this.mEngine.getTextureManager().loadTexture(point0Tile);
+		this.mEngine.getTextureManager().loadTexture(point1Tile);
+		this.mEngine.getTextureManager().loadTexture(point2Tile);
+		this.mEngine.getTextureManager().loadTexture(point3Tile);
+		this.mEngine.getTextureManager().loadTexture(point4Tile);
+		this.mEngine.getTextureManager().loadTexture(point5Tile);
+		this.mEngine.getTextureManager().loadTexture(point6Tile);
+		this.mEngine.getTextureManager().loadTexture(point7Tile);
+		this.mEngine.getTextureManager().loadTexture(point8Tile);
+		this.mEngine.getTextureManager().loadTexture(point9Tile);
+		this.mEngine.getTextureManager().loadTexture(point10Tile);
 		
 		this.mFontTexture = new BitmapTextureAtlas(256, 256, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 
@@ -275,7 +381,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
         tileSpaces = new TileSpace[15][15];
         
-        tileRack = new TileRack(this);
+        tileRack = new TileRack(this, true);
         
         dictionary = new TWLDictionary(this);
         
@@ -283,37 +389,33 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     	lastTap = 0;
     	
 
-        if (!Dungbeetle.isDungbeetleIntent(getIntent())) {
-            Toast.makeText(this, "Please launch with 2-players!", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
+        
         // All app code is in Board.
-        mDungBeetle = Dungbeetle.getInstance(this, getIntent());
-        mDungBeetle.getFeed().registerStateObserver(mStateObserver);
-        //mToken = (1 == mDungBeetle.getFeed().getMemberNumber()) ? "O" : "X";
-        //mBoard = new Board();
-        //mBoard.render(mDungBeetle.getFeed().getLatestState());
+        
 	}
 
 	@Override
 	public Scene onLoadScene() {
-		this.mEngine.registerUpdateHandler(new FPSLogger());
 		 
 		scene = new Scene();
 		scene.setBackground(new ColorBackground(0.1686f, 0.1686f, 0.1686f));
 		scene.setOnAreaTouchTraversalFrontToBack();
-		 
+		
+		
 		this.mScrollDetector = new SurfaceScrollDetector(this);
 		this.mScrollDetector.setEnabled(true);
 
 		bag = new TileBag();
 		
-        /* Calculate the coordinates for the face, so its centered on the camera. */
-        final int centerX = (CAMERA_WIDTH - this.mFaceTextureRegion.getWidth()) / 2;
-        final int centerY = (CAMERA_HEIGHT - this.mFaceTextureRegion.getHeight()) / 2;
+		players = new Player[4];
+		players[0] = new Player("Player 1");
+		players[1] = new Player("Player 2");
+		players[2] = new Player("Player 3");
+		players[3] = new Player("Player 4");
+		
+		numPlayers = 0;
 
-        
+		passCount = 0;
 		 
         for (int i = 0; i < 15; i++) {
         	for (int j = 0; j < 15; j++) {
@@ -356,15 +458,33 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         //scene.attachChild(face);
         //scene.registerTouchArea(face);
         //scene.setTouchAreaBindingEnabled(true);
+
+        titleText = new ChangeableText(20, 3, this.mFont, "Player 1 played 'quixotic' for 100 points.", "Player 1 played 'quixotic' for 100 points.".length());
+        player1Score = new ChangeableText(200, 380, this.mFont, "Player 1: " + players[0].getScore(), "Player 1: XXX".length());
+        player2Score = new ChangeableText(200, 400, this.mFont, "Player 2: " + players[1].getScore(), "Player 2: XXX".length());
+        player3Score = new ChangeableText(200, 420, this.mFont, "Player 3: " + players[2].getScore(), "Player 3: XXX".length());
+        player4Score = new ChangeableText(200, 440, this.mFont, "Player 4: " + players[3].getScore(), "Player 4: XXX".length());
+        tileCount = new ChangeableText(200, 460, this.mFont, bag.tilesRemaining() + " Tiles left", (bag.tilesRemaining() + " Tiles left").length());
         
-		final Button playButton = new Button(5, 385, playButtonRegion){
+        hud.attachChild(titleText);
+        hud.attachChild(player1Score);
+        hud.attachChild(player2Score);
+        hud.attachChild(player3Score);
+        hud.attachChild(player4Score);
+        hud.attachChild(tileCount);
+        
+		playButton = new Button(5, 385, playButtonRegion){
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
-        		if (pSceneTouchEvent.isActionDown()) {
+				if (!mMultiplayer.isMyTurn() || gameOver) {
+					return true;
+				}
+
+            	if (pSceneTouchEvent.isActionDown()) {
         			this.press();
         		}
         		if (pSceneTouchEvent.isActionUp()) {
-        			TilePoint wordCoordinates[] = tileRack.placeTiles(scene, firstPlay);
+        			TilePoint wordCoordinates[] = tileRack.placeTiles(scene, isFirstPlay());
         			if (wordCoordinates != null) {
         				Point[][] wordSet = calculateWordSet(wordCoordinates);
         				if (!verifyWordSet(wordSet)) {
@@ -373,9 +493,15 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 			this.release();
         					return true;
         				}
-    					tileRack.finalizeTiles(scene);
-        				
+
         				int totalPoints = 0;
+        				
+        				if (tileRack.isBingo()) {
+        					totalPoints += 50;
+        				}
+        				
+        				tileRack.finalizeTiles(scene);
+        				
         				for (int i = 0; i < wordSet.length; i++) {
         					if (wordSet[i] != null) {
         						totalPoints += calculatePointsForWord(wordSet[i]);
@@ -385,12 +511,49 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         				for (int i = 0; i < wordCoordinates.length; i++) {
         					tileSpaces[wordCoordinates[i].x][wordCoordinates[i].y].setUsed();
         				}
-        				firstPlay = false;
         				while(tileRack.numTiles < 7 && bag.tilesRemaining() > 0) {
         					tileRack.addTile(scene, bag.getNextTile());
         				}
+        				players[mMultiplayer.getLocalMemberIndex()].incrementScore(totalPoints);
+    					player1Score.setText(players[0].getShortName() + ": " + players[0].getScore());
 
-                		pushUpdate();
+    					String word = "";
+    					for (int j = 0; j < wordSet[0].length; j++) {
+    						word += tileSpaces[wordSet[0][j].x][wordSet[0][j].y].getLetter();
+    					}
+    					passCount = 0;
+    					lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " played '" + word.toLowerCase() + "' for " + totalPoints + "pts";
+    					
+    					if (tileRack.numTiles == 0) {
+    						//lastMove = players[0].getShortName() + " won the game.";
+    						String winners = "";
+    						int topScore = 0;
+    						for(int i = 0; i < numPlayers; i++) {
+    							if(players[i].getScore() > topScore) {
+    								topScore = players[i].getScore();
+    							}
+    						}
+    						boolean tieGame = false;
+    						for(int i = 0; i < numPlayers; i++) {
+    							if(players[i].getScore() == topScore) {
+    								if(winners == "") {
+    									winners = players[i].getShortName();
+    								}
+    								else {
+    									tieGame = true;
+    									winners += ", " + players[i].getScore();
+    								}
+    							}
+    						}
+    						if(tieGame) {
+    							lastMove = winners + " tied!";
+    						}
+    						else {
+    							lastMove = winners + " won the game!";
+    						}
+    						gameOver = true;
+    					}
+    	        		mMultiplayer.takeTurn(getApplicationState(), FeedRenderable.fromHtml(getSnapshotHtml(1)));
         			}
         			this.release();
         		}
@@ -400,8 +563,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         hud.attachChild(playButton);
         hud.registerTouchArea(playButton);
         
+        
 
-		final Button clearButton = new Button(65, 385, clearButtonRegion){
+		clearButton = new Button(65, 385, clearButtonRegion){
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
         		if (pSceneTouchEvent.isActionDown()) {
@@ -418,7 +582,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         hud.registerTouchArea(clearButton);
         
 
-		final Button shuffleButton = new Button(5, 430, shuffleButtonRegion){
+		shuffleButton = new Button(5, 430, shuffleButtonRegion){
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
         		if (pSceneTouchEvent.isActionDown()) {
@@ -426,6 +590,8 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         		}
         		if (pSceneTouchEvent.isActionUp()) {
         			this.release();
+        			tileRack.clearTiles();
+        			tileRack.shuffleTiles(scene);
         		}
         		return true;
             }
@@ -434,13 +600,129 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         hud.registerTouchArea(shuffleButton);
         
 
-		final Button swapButton = new Button(65, 430, swapButtonRegion){
+        
+        
+
+		swapButton = new Button(65, 430, swapButtonRegion){
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
-        		if (pSceneTouchEvent.isActionDown()) {
+            	if (!mMultiplayer.isMyTurn() || gameOver) {
+					return true;
+				}
+            	if (pSceneTouchEvent.isActionDown()) {
         			this.press();
         		}
         		if (pSceneTouchEvent.isActionUp()) {
+        			//Log.w(TAG, "swapping");
+        			showingPicker = true;
+        			tileRack.clearTiles();
+        			
+
+        			tilePickerHud = new HUD();
+        			
+
+        			final boolean[] selection = new boolean[7];
+        			
+        			final Button cancelButton = new Button(5, 385, cancelButtonRegion){
+        	            @Override
+        	            public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
+        	        		if (pSceneTouchEvent.isActionDown()) {
+        	        			this.press();
+        	        		}
+        	        		if (pSceneTouchEvent.isActionUp()) {
+        	        			this.release();
+        	        			mCamera.setHUD(hud);
+        	        		}
+        	        		return true;
+        	            }
+        	        };
+        	        tilePickerHud.attachChild(cancelButton);
+        	        tilePickerHud.registerTouchArea(cancelButton);
+        	        
+        			final Button confirmSwapButton = new Button(65, 385, swapButtonRegion){
+        	            @Override
+        	            public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
+        	        		if (pSceneTouchEvent.isActionDown()) {
+        	        			this.press();
+        	        		}
+        	        		if (pSceneTouchEvent.isActionUp()) {
+        	        			this.release();
+        	        			
+        	        			int numTiles = 0;
+        	        			for (int i = 0; i < 7; i++) {
+        	        				if (selection[i]) {
+        	        					numTiles++;
+        	        				}
+        	        			}
+        	        			
+        	        			Character[] swapTiles = new Character[numTiles];
+        	        			
+        	        			int j = 0;
+        	        			for (int i = 0; i < 7; i++) {
+        	        				if (selection[i]) {
+        	        					swapTiles[j] = tileRack.tiles[i].getLetter();
+        	        					j++;
+        	        				}
+        	        			}
+        	        			
+        	        			if (numTiles > 0) {
+        	        				Character[] newTiles = bag.swapTiles(swapTiles);
+        	        				j = 0;
+        	        				for (int i = 0; i < 7; i++) {
+        	        					if (selection[i]) {
+        	        						tileRack.replaceTile(scene, newTiles[j], i);
+        	        						j++;
+        	        					}
+        	        				}
+
+        	                		lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " swapped " + numTiles + " tiles";
+        	    					mMultiplayer.takeTurn(getApplicationState(), FeedRenderable.fromHtml(getSnapshotHtml(1)));
+        	        			}
+        	        			mCamera.setHUD(hud);
+        	        		}
+        	        		return true;
+        	            }
+        	        };
+        	        tilePickerHud.attachChild(confirmSwapButton);
+        	        tilePickerHud.registerTouchArea(confirmSwapButton);
+        			
+        			for (int i = 0; i < 7; i++) {
+        				selection[i] = false;
+        				if (tileRack.tiles[i] != null) {
+        					final int pos = i;
+            				int lastX = 3+45*i;
+            				int lastY = 338;
+            				Sprite letterTile = new Sprite(lastX, lastY, letterTileRegions.get(Character.valueOf(tileRack.tiles[i].getLetter())));
+            				
+            				Button letterSelection = new Button(lastX, lastY, tileOverlayRegion) {
+            		            @Override
+            		            public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
+            		            	if (!mMultiplayer.isMyTurn()) {
+            							return true;
+            						}
+            		            	if(pSceneTouchEvent.isActionDown()) {
+            		        			this.press();
+            		        		}
+            		        		if(pSceneTouchEvent.isActionUp()) {
+            		        			this.release();
+            		        			if (selection[pos]) {
+            		        				this.setAlpha(.7f);
+            		        			}
+            		        			else {
+            		        				this.setAlpha(0);
+            		        			}
+            		        			selection[pos] = !selection[pos];
+            		        		}
+            		        		return true;
+            		            }
+            				};
+            				letterSelection.setAlpha(.7f);
+            				tilePickerHud.attachChild(letterTile);
+            				tilePickerHud.attachChild(letterSelection);
+            				tilePickerHud.registerTouchArea(letterSelection);
+        				}
+        			}
+        	        mCamera.setHUD(tilePickerHud);
         			this.release();
         		}
         		return true;
@@ -450,14 +732,49 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         hud.registerTouchArea(swapButton);
         
 
-		final Button passButton = new Button(125, 430, passButtonRegion){
+		passButton = new Button(125, 430, passButtonRegion){
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
-        		if(pSceneTouchEvent.isActionDown()) {
+            	if (!mMultiplayer.isMyTurn() || gameOver) {
+					return true;
+				}
+            	if(pSceneTouchEvent.isActionDown()) {
         			this.press();
         		}
         		if(pSceneTouchEvent.isActionUp()) {
         			this.release();
+        			passCount++;
+            		lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " passed";
+            		if (passCount >= numPlayers) {
+						//lastMove = players[0].getShortName() + " won the game.";
+						String winners = "";
+						int topScore = 0;
+						for(int i = 0; i < numPlayers; i++) {
+							if(players[i].getScore() > topScore) {
+								topScore = players[i].getScore();
+							}
+						}
+						boolean tieGame = false;
+						for(int i = 0; i < numPlayers; i++) {
+							if(players[i].getScore() == topScore) {
+								if(winners == "") {
+									winners = players[i].getShortName();
+								}
+								else {
+									tieGame = true;
+									winners += ", " + players[i].getShortName();
+								}
+							}
+						}
+						if(tieGame) {
+							lastMove = winners + " tied!";
+						}
+						else {
+							lastMove = winners + " won the game!";
+						}
+						gameOver = true;
+					}
+					mMultiplayer.takeTurn(getApplicationState(), FeedRenderable.fromHtml(getSnapshotHtml(1)));
         		}
         		return true;
             }
@@ -466,17 +783,11 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         hud.registerTouchArea(passButton);
         
 
-		while(tileRack.numTiles < 7 && bag.tilesRemaining() > 0) {
-			tileRack.addTile(scene, bag.getNextTile());
-		}
         
         mCamera.setHUD(hud);
         scene.setOnSceneTouchListener(this);
         scene.setTouchAreaBindingEnabled(true);
         
-        final ChangeableText fpsText = new ChangeableText(0, 3, this.mFont, "FPS:", "FPS: XXXXX".length());
-
-        scene.attachChild(fpsText);
         
 		return scene;
 	}
@@ -484,7 +795,119 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	@Override
 	public void onLoadComplete() {
 		// TODO Auto-generated method stub
+		if (!Musubi.isMusubiInstalled(getApplicationContext())) {
+			
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setMessage("WordPlay requires the Musubi Social Platform")
+			       .setCancelable(false)
+			       .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			           public void onClick(DialogInterface dialog, int id) {
+
+			   			Intent updateIntent = null;
+			   			updateIntent = new Intent(Intent.ACTION_VIEW,
+			   				Uri.parse("market://details?id=edu.stanford.mobisocial.dungbeetle"));
+			   			startActivity(updateIntent); 
+			                WordPlayActivity.this.finish();
+			           }
+			       });
+			AlertDialog alert = builder.create();
+			alert.show();
+			
+			
+		}
+		if (!Musubi.isMusubiIntent(getIntent())) {
+            Toast.makeText(this, "Please launch with 2-players!", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 		
+		mMusubi = Musubi.getInstance(this);
+		//mFeed = mMusubi.getFeed();
+        //mFeed.registerStateObserver(mStateObserver);
+        
+        mMultiplayer = new TurnBasedMultiplayer(mMusubi, getIntent());
+        mMultiplayer.setStateObserver(mStateObserver);
+
+        if (mMultiplayer.getLocalMemberIndex() >= 0) {
+        	players[mMultiplayer.getLocalMemberIndex()].setName(mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName());
+        }
+        else {
+        	runOnUpdateThread(new Runnable() {
+                @Override
+                public void run() {
+                	hud.detachChild(playButton);
+                	hud.detachChild(clearButton);
+                	hud.detachChild(shuffleButton);
+                	hud.detachChild(swapButton);
+                	hud.detachChild(passButton);
+
+                	hud.unregisterTouchArea(playButton);
+                	hud.unregisterTouchArea(clearButton);
+                	hud.unregisterTouchArea(shuffleButton);
+                	hud.unregisterTouchArea(swapButton);
+                	hud.unregisterTouchArea(passButton);
+                }
+        	});
+        }
+        for(int i = 0; i < mMultiplayer.getMembers().length; i++) {	
+            	players[i].setName(mMultiplayer.getUser(i).getName());
+
+        }
+
+
+        numPlayers = mMultiplayer.getMembers().length;
+        
+		player1Score.setText(players[0].getShortName() + ": " + players[0].getScore());
+		player2Score.setText(players[1].getShortName() + ": " + players[1].getScore());
+		player3Score.setText(players[2].getShortName() + ": " + players[2].getScore());
+		player4Score.setText(players[3].getShortName() + ": " + players[3].getScore());
+        
+		player1Score.setColor(255, 255, 255);
+		player2Score.setColor(255, 255, 255);
+		player3Score.setColor(255, 255, 255);
+		player4Score.setColor(255, 255, 255);
+		
+		if (mMultiplayer.getGlobalMemberCursor() == 0) {
+			player1Score.setColor(1f, .647f, .341f);
+        }
+		else if (mMultiplayer.getGlobalMemberCursor() == 1) {
+			player2Score.setColor(1f, .647f, .341f);
+        }
+		else if (mMultiplayer.getGlobalMemberCursor() == 2) {
+			player3Score.setColor(1f, .647f, .341f);
+        }
+		else if (mMultiplayer.getGlobalMemberCursor() == 3) {
+			player4Score.setColor(1f, .647f, .341f);
+        }
+
+		if(numPlayers < 4) {
+			player4Score.setText("");
+		}
+		if(numPlayers < 3) {
+			player3Score.setText("");
+		}
+		
+		if (mMultiplayer.isMyTurn()) {
+			titleText.setText("Your turn");
+		}
+		else {
+			titleText.setText(players[mMultiplayer.getGlobalMemberCursor()].getShortName() + "'s turn");
+		}
+		
+        if(mMultiplayer.getLatestState() == null) {
+        	//Toast.makeText(this, "latest state is null", Toast.LENGTH_SHORT).show();
+        	if(mMultiplayer.isMyTurn()) {
+        		lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " started a game";
+        		mMultiplayer.takeTurn(mMultiplayer.getLocalMemberIndex(), getApplicationState(),  FeedRenderable.fromHtml(getSnapshotHtml(0)));
+        	}
+        	else {
+        		tileRack = new TileRack(this, true);
+        	}
+        }
+        else {
+        	render(mMultiplayer.getLatestState(), true);
+        }
+        
 	}
 	// ===========================================================
 	// Methods
@@ -591,6 +1014,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 				word += tileSpaces[wordSet[i][j].x][wordSet[i][j].y].getLetter();
 			}
 			if (!dictionary.isWord(word)) {
+				Toast.makeText(WordPlayActivity.this, word + " is not a word.", Toast.LENGTH_SHORT).show();
 				return false;
 			}
 		}
@@ -611,7 +1035,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		
 		
 		int totalPoints = wordPoints * wordModifier;
-		Log.w(TAG, word + " for " + totalPoints + " points");
+		//Log.w(TAG, word + " for " + totalPoints + " points");
 		return totalPoints;
 	}
 	
@@ -619,6 +1043,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	@Override
 	public boolean onSceneTouchEvent(Scene pScene, TouchEvent pSceneTouchEvent) {
 		// TODO Auto-generated method stub
+		if(showingPicker) {
+			return true;
+		}
 		this.mScrollDetector.onTouchEvent(pSceneTouchEvent);
 		if(pSceneTouchEvent.getAction() == MotionEvent.ACTION_DOWN)
         {
@@ -645,6 +1072,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	public void onScroll(ScrollDetector pScollDetector, TouchEvent pTouchEvent,
 			float pDistanceX, float pDistanceY) {
 		// TODO Auto-generated method stub
+		if (showingPicker) {
+			return;
+		}
 		Log.d(TAG, "Scroll {x:"+pDistanceX+", y: "+pDistanceY+"}");
 		this.mCamera.offsetCenter(-pDistanceX, -pDistanceY);
 	}
@@ -652,18 +1082,44 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// =========================================================== 
-	public void pushUpdate() {
-        //mDungBeetle.getFeed().setApplicationState(getApplicationState(), getSnapshotText());
-        mDungBeetle.getFeed().postObjectWithHtml(getApplicationState(), getSnapshotHtml());
-    }
-	public String getSnapshotHtml() {
-        StringBuilder html = new StringBuilder("here is a board lol");
+	
+	
+	public String getSnapshotHtml(int takingTurn) {
+        StringBuilder html = new StringBuilder("<html><head>");
+        html.append("<body>");
+        html.append("<span style=\"font-weight:bold;\">WordPlay Scoreboard</span>");
+        html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
+        html.append("<table>");
+        for (int i = 0; i < numPlayers; i++) {
+        	if ((mMultiplayer.getGlobalMemberCursor()+takingTurn)%numPlayers == i) {
+        		html.append("<tr><td><span style=\"font-weight:bold; color: #FF752B;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+        	}
+        	else {
+        		html.append("<tr><td><span style=\"font-weight:bold; color: #ffffff;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+        	}
+    	}
+		html.append("</table>");
+		html.append("</div>").append(lastMove).append("<div style=\"text-align: right;\">");
+		html.append(bag.tilesRemaining()).append(" tiles remaining");
+		html.append("</div></body>");
+
+		html.append("</html>");
         return html.toString();
     }
 	private JSONObject getApplicationState() {
-        JSONObject o = new JSONObject();
+        JSONObject state = mMultiplayer.getLatestState() == null ? new JSONObject() : mMultiplayer.getLatestState();
+        
         JSONArray board = new JSONArray();
         try {
+        	state.put("passcount", passCount);
+        	state.put("gameover", gameOver);
+        	if (mMultiplayer.getLatestState() == null) {
+        		//Log.w(TAG, "sending initial state");
+            	state.put("initializing", true);
+            }
+        	else {
+        		state.put("initializing", false);
+        	}
         	for (int i = 0; i < 15; i++) {
         		JSONArray row = new JSONArray();
         		for (int j = 0; j < 15; j++) {
@@ -674,29 +1130,313 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             /*for (Button b : mmSquares) {
                 s.put(b.getText());
             }*/
-            o.put("board", board);
+        	state.put("lastmove", lastMove);
+            state.put("board", board);
+
+        	JSONArray racks = new JSONArray();
+
+        	TileRack opponentRacks[] = new TileRack[numPlayers];// = new TileRack(this, false);
+        	for(int i = 0; i < numPlayers-1; i++) {
+        		opponentRacks[i] = new TileRack(this, false);
+        	}
+        	
+            if(mMultiplayer.getLatestState() == null) {  	
+            	while(tileRack.numTiles < 7 && bag.tilesRemaining() > 0) {
+					tileRack.addTile(scene, bag.getNextTile());
+				}
+            	for(int i = 0; i < numPlayers-1; i++) {
+	            	while(opponentRacks[i].numTiles < 7 && bag.tilesRemaining() > 0) {
+	            		//Log.w(TAG, "creating new tiles for opponent");
+	            		opponentRacks[i].addTile(scene, bag.getNextTile());
+					}
+            	}
+            }
+            else {
+            	JSONArray oldRacks = mMultiplayer.getLatestState().getJSONArray("racks");
+            	/*Log.w(TAG, "getting tiles for opponent from state");
+            	Log.w(TAG, oldRacks.toString());
+            	Log.w(TAG, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2).toString());
+            	Log.w(TAG, (mMultiplayer.getLocalMemberIndex()+1)%2 + "");*/
+            	//opponentRack.fromJson(scene, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2));
+            	
+            	int j = 0;
+            	for(int i = 0; i < numPlayers; i++) {
+            		if (i != mMultiplayer.getLocalMemberIndex()) {
+            			opponentRacks[j].fromJson(scene, oldRacks.getJSONArray(i));
+            			j++;
+            		}
+            	}
+            }
+
+            tileCount.setText(bag.tilesRemaining() + " Tiles left");
+            state.put("bag", bag.toJson());
+            
+            int j = 0;
+            for(int i = 0; i < numPlayers; i++) {
+            	if (i == mMultiplayer.getLocalMemberIndex()) {
+            		racks.put(tileRack.toJson());
+            	}
+            	else {
+            		racks.put(opponentRacks[j].toJson());
+            	}
+            }
+        	state.put("racks", racks);
+        	Log.w(TAG, racks.toString());
+        	
+        	JSONArray scores = new JSONArray();
+        	scores.put(players[0].getScore());
+        	scores.put(players[1].getScore());
+        	scores.put(players[2].getScore());
+        	scores.put(players[3].getScore());
+            state.put("scores", scores);
+            
+            JSONArray jsonPlayers = new JSONArray();
+            
+            jsonPlayers.put(players[0].getName());
+            jsonPlayers.put(players[1].getName());
+            jsonPlayers.put(players[2].getName());
+            jsonPlayers.put(players[3].getName());
+            state.put("players", jsonPlayers);
+            
         } catch (JSONException e) {
-            Log.wtf(TAG, "Failed to get board state", e);
+            //Log.wtf(TAG, "Failed to get board state", e);
         }
-        return o;
+        return state;
     }
 	private StateObserver mStateObserver = new StateObserver() {
         @Override
         public void onUpdate(JSONObject state) {
-        	Log.w(TAG, state.toString());
-        	Toast.makeText(WordPlayActivity.this, "Your turn!", Toast.LENGTH_SHORT).show();
-            JSONArray board = state.optJSONArray("board");
-            for (int i = 0; i < 15; i++) {
-            	JSONArray row = board.optJSONArray(i);
-            	for (int j = 0; j < 15; j++) {
-            		char c = row.optString(j).charAt(0);
-            		tileSpaces[i][j].setLetter(c);
-            		if (c != '0') {
-            			tileSpaces[i][j].setUsed();
-                		tileSpaces[i][j].finalizeLetter(WordPlayActivity.this, scene);
-            		}
-            	}
-            }
+        	//Log.w(TAG, "received new state: " + state.toString());
+        	lastMove = state.optString("lastmove");
+        	if (state.optBoolean("initializing")) {
+        		initializeState(state);
+        	}
+        	else {
+        		render(state, false);
+        	}
         }
     };
+    
+    private void initializeState(JSONObject state) {
+
+    	//Log.w(TAG, "initializing state");
+    	
+        JSONArray board = state.optJSONArray("board");
+        
+        for (int i = 0; i < 15; i++) {
+        	JSONArray row = board.optJSONArray(i);
+        	for (int j = 0; j < 15; j++) {
+        		char c = row.optString(j).charAt(0);
+        		tileSpaces[i][j].setLetter(c);
+        		if (c != '0') {
+        			tileSpaces[i][j].setUsed();
+            		tileSpaces[i][j].finalizeLetter(WordPlayActivity.this, scene);
+        		}
+        	}
+        }
+        bag.fromJson(state.optJSONArray("bag"));
+        
+    	tileRack.fromJson(scene, state.optJSONArray("racks").optJSONArray(mMultiplayer.getLocalMemberIndex()));
+        
+    }
+    
+    
+    public void showTentativePoints() {
+    	TilePoint wordCoordinates[] = tileRack.placeTiles(scene, isFirstPlay());
+		if (wordCoordinates != null) {
+			Point[][] wordSet = calculateWordSet(wordCoordinates);
+			
+			int totalPoints = 0;
+			
+			if (tileRack.isBingo()) {
+				totalPoints += 50;
+			}
+			
+			for (int i = 0; i < wordSet.length; i++) {
+				if (wordSet[i] != null) {
+					totalPoints += calculatePointsForWord(wordSet[i]);
+				}
+			}
+			titleText.setText("This play is worth " + totalPoints + "pts");
+			tileRack.unsetLetters(scene);
+		}
+		else {
+			Log.w(TAG, "not a valid placement");
+			titleText.setText(lastMove);
+		}
+    }
+    
+    public void drawCrosshair(final int xPos, final int yPos) {
+
+		final int x = 3+xPos*21;
+		final int y = 23+yPos*21;
+		runOnUpdateThread(new Runnable() {
+            @Override
+            public void run() {
+            	if(xCross != null && yCross != null) {
+	        		if (scene.getChildIndex(xCross) >= 0) {
+	                	scene.detachChild(xCross);
+	                }
+	                if (scene.getChildIndex(yCross) >= 0) {
+	                	scene.detachChild(yCross);
+	                }
+            	}
+                if (xPos >= 0 && xPos < 15 && yPos >= 0 && yPos < 15) {
+                	xCross = new Sprite(3, y, horizontalCrosshairRegion);
+                	yCross = new Sprite(x, 23, verticalCrosshairRegion);
+                	//xCross.setAlpha(.01f);
+                	//yCross.setAlpha(.01f);
+                	scene.attachChild(xCross);
+                	scene.attachChild(yCross);
+                }
+            }
+    	});
+    }
+    
+    public void removeCrosshair() {
+
+		runOnUpdateThread(new Runnable() {
+            @Override
+            public void run() {
+            	if(xCross != null && yCross != null) {
+	        		if (scene.getChildIndex(xCross) >= 0) {
+	                	scene.detachChild(xCross);
+	                }
+	                if (scene.getChildIndex(yCross) >= 0) {
+	                	scene.detachChild(yCross);
+	                }
+            	}
+            }
+    	});
+    }
+    
+    private void render(JSONObject message, boolean firstLoad) {
+
+    	//Log.w(TAG, "rendering normal state");
+        gameOver = message.optBoolean("gameover");
+        
+        passCount = message.optInt("passcount");
+    	
+        JSONArray board = message.optJSONArray("board");
+        for (int i = 0; i < 15; i++) {
+        	JSONArray row = board.optJSONArray(i);
+        	for (int j = 0; j < 15; j++) {
+        		char c = row.optString(j).charAt(0);
+        		tileSpaces[i][j].setLetter(c);
+        		if (c != '0') {
+        			tileSpaces[i][j].setUsed();
+            		tileSpaces[i][j].finalizeLetter(WordPlayActivity.this, scene);
+        		}
+        	}
+        }
+        bag.fromJson(message.optJSONArray("bag"));
+        for(int i = 0; i < numPlayers; i++) {
+            players[i].setScore(message.optJSONArray("scores").optInt(i));	
+            if(i == mMultiplayer.getLocalMemberIndex()) {
+            	players[i].setName(mMultiplayer.getUser(i).getName());
+            }
+            else {
+            	players[i].setName(message.optJSONArray("players").optString(i));
+            }
+        }
+
+    	/*if (mMultiplayer.isMyTurn()) {
+			titleText.setText("Your turn");
+		}
+		else {
+			titleText.setText(players[mMultiplayer.getGlobalMemberCursor()].getShortName() + "'s turn");
+		}*/
+        lastMove = message.optString("lastmove");
+        titleText.setText(lastMove);
+		player1Score.setText(players[0].getShortName() + ": " + players[0].getScore());
+		player2Score.setText(players[1].getShortName() + ": " + players[1].getScore());
+		player3Score.setText(players[2].getShortName() + ": " + players[2].getScore());
+		player4Score.setText(players[3].getShortName() + ": " + players[3].getScore());
+		
+
+		player1Score.setColor(255, 255, 255);
+		player2Score.setColor(255, 255, 255);
+		player3Score.setColor(255, 255, 255);
+		player4Score.setColor(255, 255, 255);
+		
+		if (mMultiplayer.getGlobalMemberCursor() == 0) {
+			player1Score.setColor(1f, .647f, .341f);
+        }
+		else if (mMultiplayer.getGlobalMemberCursor() == 1) {
+			player2Score.setColor(1f, .647f, .341f);
+        }
+		else if (mMultiplayer.getGlobalMemberCursor() == 2) {
+			player3Score.setColor(1f, .647f, .341f);
+        }
+		else if (mMultiplayer.getGlobalMemberCursor() == 3) {
+			player4Score.setColor(1f, .647f, .341f);
+        }
+
+		if(numPlayers < 4) {
+			player4Score.setText("");
+		}
+		if(numPlayers < 3) {
+			player3Score.setText("");
+		}
+
+        tileCount.setText(bag.tilesRemaining() + " Tiles left");
+        
+        if(gameOver) {
+        	int topScore = 0;
+        	for(int i = 0; i < numPlayers; i++) {
+        		if(players[i].getScore() > topScore) {
+        			topScore = players[i].getScore();
+        		}
+        	}
+        	int numWinners = 0;
+        	for(int i = 0; i < numPlayers; i++) {
+        		if(players[i].getScore() == topScore) {
+        			numWinners++;
+        		}
+        	}
+        	if (mMultiplayer.getLocalMemberIndex() >= 0) {
+	        	if(players[mMultiplayer.getLocalMemberIndex()].getScore() == topScore) {
+	        		if (numWinners == 1) {
+	        			titleText.setText("You won!");
+	            		Toast.makeText(WordPlayActivity.this, "You won!", Toast.LENGTH_SHORT).show();
+	        			
+	        		}
+	        		else {
+	        			titleText.setText("You tied!");
+	            		Toast.makeText(WordPlayActivity.this, "You tied!", Toast.LENGTH_SHORT).show();
+	        		}
+	        	}
+	        	else {
+	        		titleText.setText("You lost!");
+	        		Toast.makeText(WordPlayActivity.this, "You lost!", Toast.LENGTH_SHORT).show();
+	        	}
+        	}
+        }
+		
+        
+        if(firstLoad) {
+        	if(mMultiplayer.getLocalMemberIndex() >= 0) {
+        		//Log.w(TAG, "racks " + mMultiplayer.getLocalMemberIndex() + ": " + message.optJSONArray("racks").optJSONArray(mMultiplayer.getLocalMemberIndex()));
+        		tileRack.fromJson(scene, message.optJSONArray("racks").optJSONArray(mMultiplayer.getLocalMemberIndex()));
+        	}
+    		//firstPlay = false;
+        }
+        
+
+    	if (mMultiplayer.isMyTurn() && !gameOver) {
+    		Toast.makeText(WordPlayActivity.this, "Your turn!", Toast.LENGTH_SHORT).show();
+		}
+    }
+    
+    private boolean isFirstPlay() {
+    	for(int i = 0; i < 15; i++) {
+    		for(int j = 0; j < 15; j++) {
+    			if (tileSpaces[i][j].getLetter() != '0') {
+    				return false;
+    			}
+    		}
+    	}
+    	return true;
+    }
+    
 }
