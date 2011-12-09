@@ -1,6 +1,6 @@
 package edu.stanford.mobisocial.games.wordplay.players;
 
-import mobisocial.socialkit.musubi.User;
+import mobisocial.socialkit.User;
 
 public class Player {
 	private String name;

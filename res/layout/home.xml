@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+
+<Button
+    android:id="@+id/new_board"
+    android:text="@string/new_board"
+    android:layout_width="wrap_content" 
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:layout_alignParentRight="true"
+    />
+
+<Button
+    android:id="@+id/new_game"
+    android:text="@string/new_game"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:layout_toLeftOf="@id/new_board"
+    /> 
+
+<ListView
+    android:id="@+id/gamelist"
+    android:layout_width="fill_parent" 
+    android:layout_height="fill_parent"
+    android:layout_above="@id/new_game"
+    />
+</RelativeLayout>
