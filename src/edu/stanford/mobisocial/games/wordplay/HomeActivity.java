@@ -1,7 +1,10 @@
 package edu.stanford.mobisocial.games.wordplay;
 
+import java.util.Set;
+
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.DbUser;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -10,6 +13,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -19,6 +23,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class HomeActivity extends Activity {
+    private static final String TAG = "WordPlayHome";
     private Musubi mMusubi;
 
     @Override
@@ -52,8 +57,13 @@ public class HomeActivity extends Activity {
         String selection = "type = ?";
         String[] selectionArgs = new String[] { "app" };
         String order = null;
-        Cursor cursor = mMusubi.queryAppData(
-                projection, selection, selectionArgs, order);
+        Cursor cursor = mMusubi.getAppFeed().query(projection, selection, selectionArgs, order);
+
+        
+        Set<DbUser> users = mMusubi.getAppFeed().getRemoteUsers();
+        for (DbUser u : users) {
+            Log.d(TAG, "user " + u.getName());
+        }
 
         ListView lv = (ListView)findViewById(R.id.gamelist);
         GameSummaryAdapter gsa = new GameSummaryAdapter(this, cursor);
