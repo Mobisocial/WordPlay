@@ -3,4 +3,5 @@
     <string name="new_board">New Board</string>
     <string name="new_game">New Game</string>
     <string name="app_name">WordPlay</string>
+    <string name="alt_app_name">WordTurk</string>
 </resources>

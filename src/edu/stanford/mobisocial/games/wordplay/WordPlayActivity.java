@@ -818,10 +818,8 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             return;
         }
 		
-		mMusubi = Musubi.getInstance(this);
-		//mFeed = mMusubi.getFeed();
-        //mFeed.registerStateObserver(mStateObserver);
-        
+		mMusubi = Musubi.getInstance(this, getIntent());
+		Log.d(TAG, "EXTRAS " + getIntent().getExtras());
         mMultiplayer = new WordPlayMultiplayer(mMusubi.getObj());
 
         if (mMultiplayer.getLocalMemberIndex() >= 0) {
@@ -1196,6 +1194,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             } catch (JSONException e) {
                 //Log.wtf(TAG, "Failed to get board state", e);
             }
+            Log.d(TAG, "SETTING APP STATE " + state);
             return state;
         }
 
@@ -1224,7 +1223,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     }
     
     private void initializeState(JSONObject state) {
-
+        Toast.makeText(this, "INITIALIZING", Toast.LENGTH_SHORT).show();
     	//Log.w(TAG, "initializing state");
     	
         JSONArray board = state.optJSONArray("board");
@@ -1317,10 +1316,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     }
     
     private void render(JSONObject message, boolean firstLoad) {
-
     	//Log.w(TAG, "rendering normal state");
+        numPlayers = mMultiplayer.getMembers().length;
         gameOver = message.optBoolean("gameover");
-        
         passCount = message.optInt("passcount");
     	
         JSONArray board = message.optJSONArray("board");
@@ -1337,7 +1335,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
         bag.fromJson(message.optJSONArray("bag"));
         for(int i = 0; i < numPlayers; i++) {
-            players[i].setScore(message.optJSONArray("scores").optInt(i));	
+            players[i].setScore(message.optJSONArray("scores").optInt(i));
         }
 
     	/*if (mMultiplayer.isMyTurn()) {
