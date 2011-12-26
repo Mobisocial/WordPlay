@@ -1223,9 +1223,8 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     }
     
     private void initializeState(JSONObject state) {
-        Toast.makeText(this, "INITIALIZING", Toast.LENGTH_SHORT).show();
     	//Log.w(TAG, "initializing state");
-    	
+
         JSONArray board = state.optJSONArray("board");
         
         for (int i = 0; i < 15; i++) {
