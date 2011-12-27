@@ -179,13 +179,13 @@ public class TileRack {
 		//placed 1 tile
 		if (!vertical && !horizontal) {
 			//check if horizontal is possible
-			if (context.tileSpaces[anchor.x-1][anchor.y].getLetter() != '0' || context.tileSpaces[anchor.x+1][anchor.y].getLetter() != '0') {
+			if ((anchor.x-1 >= 0 && context.tileSpaces[anchor.x-1][anchor.y].getLetter() != '0') || (anchor.x+1 < 15 && context.tileSpaces[anchor.x+1][anchor.y].getLetter() != '0')) {
 				horizontal = true;
 				maxPos = anchor.x;
 				minPos = anchor.x;
 			}
 			//if not, check if vertical is possible
-			else if(context.tileSpaces[anchor.x][anchor.y-1].getLetter() != '0' || context.tileSpaces[anchor.x][anchor.y+1].getLetter() != '0') {
+			else if((anchor.y-1 >= 0 && context.tileSpaces[anchor.x][anchor.y-1].getLetter() != '0') || (anchor.y+1 < 15 && context.tileSpaces[anchor.x][anchor.y+1].getLetter() != '0')) {
 				vertical = true;
 				maxPos = anchor.y;
 				minPos = anchor.y;
