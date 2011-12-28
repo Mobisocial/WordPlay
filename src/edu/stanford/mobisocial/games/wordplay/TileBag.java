@@ -52,7 +52,8 @@ public class TileBag {
 		//nextTile++;
 		
 		Character[] original = bag;
-		bag = Arrays.copyOfRange(original, 1, original.length);
+		bag = new Character[original.length - 1];
+		System.arraycopy(original, 1, bag, 0, bag.length);
 		
 		return tile;
 	}

@@ -4,10 +4,10 @@ import java.util.Calendar;
 import java.util.HashMap;
 
 import mobisocial.socialkit.User;
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.musubi.multiplayer.FeedRenderable;
 import mobisocial.socialkit.musubi.multiplayer.TurnBasedMultiplayer;
-import mobisocial.socialkit.musubi.multiplayer.TurnBasedMultiplayer.StateObserver;
 
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.ZoomCamera;
@@ -132,7 +132,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
     private Sprite xCross, yCross;
     
-    private TurnBasedMultiplayer mMultiplayer;
+    private WordPlayMultiplayer mMultiplayer;
     boolean isHost;
     ChangeableText titleText, player1Score, player2Score, player3Score, player4Score, tileCount;
 	// ===========================================================
@@ -553,7 +553,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     						}
     						gameOver = true;
     					}
-    	        		mMultiplayer.takeTurn(getApplicationState(), FeedRenderable.fromHtml(getSnapshotHtml(1)));
+    	        		mMultiplayer.takeTurn(mMultiplayer.getApplicationState());
         			}
         			this.release();
         		}
@@ -676,7 +676,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         	        				}
 
         	                		lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " swapped " + numTiles + " tiles";
-        	    					mMultiplayer.takeTurn(getApplicationState(), FeedRenderable.fromHtml(getSnapshotHtml(1)));
+        	    					mMultiplayer.takeTurn(mMultiplayer.getApplicationState());
         	        			}
         	        			mCamera.setHUD(hud);
         	        		}
@@ -774,7 +774,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 						}
 						gameOver = true;
 					}
-					mMultiplayer.takeTurn(getApplicationState(), FeedRenderable.fromHtml(getSnapshotHtml(1)));
+					mMultiplayer.takeTurn(mMultiplayer.getApplicationState());
         		}
         		return true;
             }
@@ -802,11 +802,8 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 			       .setCancelable(false)
 			       .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
 			           public void onClick(DialogInterface dialog, int id) {
-
-			   			Intent updateIntent = null;
-			   			updateIntent = new Intent(Intent.ACTION_VIEW,
-			   				Uri.parse("market://details?id=edu.stanford.mobisocial.dungbeetle"));
-			   			startActivity(updateIntent); 
+    			   			Intent updateIntent = Musubi.getMarketIntent();
+    			   			startActivity(updateIntent); 
 			                WordPlayActivity.this.finish();
 			           }
 			       });
@@ -821,12 +818,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             return;
         }
 		
-		mMusubi = Musubi.getInstance(this);
-		//mFeed = mMusubi.getFeed();
-        //mFeed.registerStateObserver(mStateObserver);
-        
-        mMultiplayer = new TurnBasedMultiplayer(mMusubi, getIntent());
-        mMultiplayer.setStateObserver(mStateObserver);
+		mMusubi = Musubi.getInstance(this, getIntent());
+		Log.d(TAG, "EXTRAS " + getIntent().getExtras());
+        mMultiplayer = new WordPlayMultiplayer(mMusubi.getObj());
 
         if (mMultiplayer.getLocalMemberIndex() >= 0) {
         	players[mMultiplayer.getLocalMemberIndex()].setName(mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName());
@@ -851,12 +845,8 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
         for(int i = 0; i < mMultiplayer.getMembers().length; i++) {	
             	players[i].setName(mMultiplayer.getUser(i).getName());
-
         }
 
-
-        numPlayers = mMultiplayer.getMembers().length;
-        
 		player1Score.setText(players[0].getShortName() + ": " + players[0].getScore());
 		player2Score.setText(players[1].getShortName() + ": " + players[1].getScore());
 		player3Score.setText(players[2].getShortName() + ": " + players[2].getScore());
@@ -896,11 +886,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		
         if(mMultiplayer.getLatestState() == null) {
         	//Toast.makeText(this, "latest state is null", Toast.LENGTH_SHORT).show();
-        	if(mMultiplayer.isMyTurn()) {
-        		lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " started a game";
-        		mMultiplayer.takeTurn(mMultiplayer.getLocalMemberIndex(), getApplicationState(),  FeedRenderable.fromHtml(getSnapshotHtml(0)));
-        	}
-        	else {
+        	if(!mMultiplayer.isMyTurn()) {
         		tileRack = new TileRack(this, true);
         	}
         }
@@ -1082,145 +1068,163 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// =========================================================== 
-	
-	
-	public String getSnapshotHtml(int takingTurn) {
-        StringBuilder html = new StringBuilder("<html><head>");
-        html.append("<body>");
-        html.append("<span style=\"font-weight:bold;\">WordPlay Scoreboard</span>");
-        html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
-        html.append("<table>");
-        for (int i = 0; i < numPlayers; i++) {
-        	if ((mMultiplayer.getGlobalMemberCursor()+takingTurn)%numPlayers == i) {
-        		html.append("<tr><td><span style=\"font-weight:bold; color: #FF752B;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
-        	}
-        	else {
-        		html.append("<tr><td><span style=\"font-weight:bold; color: #ffffff;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
-        	}
-    	}
-		html.append("</table>");
-		html.append("</div>").append(lastMove).append("<div style=\"text-align: right;\">");
-		html.append(bag.tilesRemaining()).append(" tiles remaining");
-		html.append("</div></body>");
 
-		html.append("</html>");
-        return html.toString();
-    }
-	private JSONObject getApplicationState() {
-        JSONObject state = mMultiplayer.getLatestState() == null ? new JSONObject() : mMultiplayer.getLatestState();
-        
-        JSONArray board = new JSONArray();
-        try {
-        	state.put("passcount", passCount);
-        	state.put("gameover", gameOver);
-        	if (mMultiplayer.getLatestState() == null) {
-        		//Log.w(TAG, "sending initial state");
-            	state.put("initializing", true);
+    class WordPlayMultiplayer extends TurnBasedMultiplayer {
+        public WordPlayMultiplayer(DbObj obj) {
+            super(obj);
+        }
+
+        @Override
+        protected FeedRenderable getFeedView(JSONObject arg0) {
+            return FeedRenderable.fromHtml(getSnapshotHtml());
+        }
+
+        @Override
+        protected JSONObject getInitialState() {
+            for (int i = 0; i < getMembers().length; i++) {
+                players[i].setName(getUser(i).getName());
             }
-        	else {
-        		state.put("initializing", false);
-        	}
-        	for (int i = 0; i < 15; i++) {
-        		JSONArray row = new JSONArray();
-        		for (int j = 0; j < 15; j++) {
-        			row.put(tileSpaces[i][j].getLetter() + "");
-        		}
-        		board.put(row);
-        	}
-            /*for (Button b : mmSquares) {
-                s.put(b.getText());
-            }*/
-        	state.put("lastmove", lastMove);
-            state.put("board", board);
+            lastMove = getLocalUser().getName() + " started a game";
+            return getApplicationState();
+        }
 
-        	JSONArray racks = new JSONArray();
-
-        	TileRack opponentRacks[] = new TileRack[numPlayers];// = new TileRack(this, false);
-        	for(int i = 0; i < numPlayers-1; i++) {
-        		opponentRacks[i] = new TileRack(this, false);
-        	}
-        	
-            if(mMultiplayer.getLatestState() == null) {  	
-            	while(tileRack.numTiles < 7 && bag.tilesRemaining() > 0) {
-					tileRack.addTile(scene, bag.getNextTile());
-				}
-            	for(int i = 0; i < numPlayers-1; i++) {
-	            	while(opponentRacks[i].numTiles < 7 && bag.tilesRemaining() > 0) {
-	            		//Log.w(TAG, "creating new tiles for opponent");
-	            		opponentRacks[i].addTile(scene, bag.getNextTile());
-					}
-            	}
+        @Override
+        protected void onStateUpdate(JSONObject state) {
+            lastMove = state.optString("lastmove");
+            if (state.optBoolean("initializing")) {
+                initializeState(state);
             }
             else {
-            	JSONArray oldRacks = mMultiplayer.getLatestState().getJSONArray("racks");
-            	/*Log.w(TAG, "getting tiles for opponent from state");
-            	Log.w(TAG, oldRacks.toString());
-            	Log.w(TAG, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2).toString());
-            	Log.w(TAG, (mMultiplayer.getLocalMemberIndex()+1)%2 + "");*/
-            	//opponentRack.fromJson(scene, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2));
-            	
-            	int j = 0;
-            	for(int i = 0; i < numPlayers; i++) {
-            		if (i != mMultiplayer.getLocalMemberIndex()) {
-            			opponentRacks[j].fromJson(scene, oldRacks.getJSONArray(i));
-            			j++;
-            		}
-            	}
+                render(state, false);
             }
+        }
 
-            tileCount.setText(bag.tilesRemaining() + " Tiles left");
-            state.put("bag", bag.toJson());
-            
-            int j = 0;
-            for(int i = 0; i < numPlayers; i++) {
-            	if (i == mMultiplayer.getLocalMemberIndex()) {
-            		racks.put(tileRack.toJson());
-            	}
-            	else {
-            		racks.put(opponentRacks[j].toJson());
-            	}
+        private JSONObject getApplicationState() {
+            JSONObject state = getLatestState() == null ? new JSONObject() : getLatestState();
+            numPlayers = getMembers().length;
+            JSONArray board = new JSONArray();
+            try {
+                state.put("passcount", passCount);
+                state.put("gameover", gameOver);
+                if (mMultiplayer == null) {
+                    //Log.w(TAG, "sending initial state");
+                    state.put("initializing", true);
+                }
+                else {
+                    state.put("initializing", false);
+                }
+                for (int i = 0; i < 15; i++) {
+                    JSONArray row = new JSONArray();
+                    for (int j = 0; j < 15; j++) {
+                        row.put(tileSpaces[i][j].getLetter() + "");
+                    }
+                    board.put(row);
+                }
+                /*for (Button b : mmSquares) {
+                    s.put(b.getText());
+                }*/
+                state.put("lastmove", lastMove);
+                state.put("board", board);
+
+                JSONArray racks = new JSONArray();
+
+                TileRack opponentRacks[] = new TileRack[numPlayers];// = new TileRack(this, false);
+                for(int i = 0; i < numPlayers-1; i++) {
+                    opponentRacks[i] = new TileRack(WordPlayActivity.this, false);
+                }
+                
+                if(getLatestState() == null) {      
+                    while(tileRack.numTiles < 7 && bag.tilesRemaining() > 0) {
+                        tileRack.addTile(scene, bag.getNextTile());
+                    }
+                    for(int i = 0; i < numPlayers-1; i++) {
+                        while(opponentRacks[i].numTiles < 7 && bag.tilesRemaining() > 0) {
+                            //Log.w(TAG, "creating new tiles for opponent");
+                            opponentRacks[i].addTile(scene, bag.getNextTile());
+                        }
+                    }
+                }
+                else {
+                    JSONArray oldRacks = mMultiplayer.getLatestState().getJSONArray("racks");
+                    /*Log.w(TAG, "getting tiles for opponent from state");
+                    Log.w(TAG, oldRacks.toString());
+                    Log.w(TAG, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2).toString());
+                    Log.w(TAG, (mMultiplayer.getLocalMemberIndex()+1)%2 + "");*/
+                    //opponentRack.fromJson(scene, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2));
+                    
+                    int j = 0;
+                    for(int i = 0; i < numPlayers; i++) {
+                        if (i != getLocalMemberIndex()) {
+                            opponentRacks[j].fromJson(scene, oldRacks.getJSONArray(i));
+                            j++;
+                        }
+                    }
+                }
+
+                tileCount.setText(bag.tilesRemaining() + " Tiles left");
+                state.put("bag", bag.toJson());
+                
+                int j = 0;
+                for(int i = 0; i < numPlayers; i++) {
+                    if (i == getLocalMemberIndex()) {
+                        racks.put(tileRack.toJson());
+                    }
+                    else {
+                        racks.put(opponentRacks[j].toJson());
+                    }
+                }
+                state.put("racks", racks);
+                Log.w(TAG, racks.toString());
+                
+                JSONArray scores = new JSONArray();
+                scores.put(players[0].getScore());
+                scores.put(players[1].getScore());
+                scores.put(players[2].getScore());
+                scores.put(players[3].getScore());
+                state.put("scores", scores);
+                
+                JSONArray jsonPlayers = new JSONArray();
+                
+                jsonPlayers.put(players[0].getName());
+                jsonPlayers.put(players[1].getName());
+                jsonPlayers.put(players[2].getName());
+                jsonPlayers.put(players[3].getName());
+                state.put("players", jsonPlayers);
+                
+            } catch (JSONException e) {
+                //Log.wtf(TAG, "Failed to get board state", e);
             }
-        	state.put("racks", racks);
-        	Log.w(TAG, racks.toString());
-        	
-        	JSONArray scores = new JSONArray();
-        	scores.put(players[0].getScore());
-        	scores.put(players[1].getScore());
-        	scores.put(players[2].getScore());
-        	scores.put(players[3].getScore());
-            state.put("scores", scores);
-            
-            JSONArray jsonPlayers = new JSONArray();
-            
-            jsonPlayers.put(players[0].getName());
-            jsonPlayers.put(players[1].getName());
-            jsonPlayers.put(players[2].getName());
-            jsonPlayers.put(players[3].getName());
-            state.put("players", jsonPlayers);
-            
-        } catch (JSONException e) {
-            //Log.wtf(TAG, "Failed to get board state", e);
+            Log.d(TAG, "SETTING APP STATE " + state);
+            return state;
         }
-        return state;
+
+        public String getSnapshotHtml() {
+            StringBuilder html = new StringBuilder("<html><head>");
+            html.append("<body>");
+            html.append("<span style=\"font-weight:bold;\">WordPlay Scoreboard</span>");
+            html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
+            html.append("<table>");
+            for (int i = 0; i < numPlayers; i++) {
+                if ((getGlobalMemberCursor())%numPlayers == i) {
+                    html.append("<tr><td><span style=\"font-weight:bold; color: #FF752B;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+                }
+                else {
+                    html.append("<tr><td><span style=\"font-weight:bold; color: #ffffff;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+                }
+            }
+            html.append("</table>");
+            html.append("</div>").append(lastMove).append("<div style=\"text-align: right;\">");
+            html.append(bag.tilesRemaining()).append(" tiles remaining");
+            html.append("</div></body>");
+
+            html.append("</html>");
+            return html.toString();
+        }
     }
-	private StateObserver mStateObserver = new StateObserver() {
-        @Override
-        public void onUpdate(JSONObject state) {
-        	//Log.w(TAG, "received new state: " + state.toString());
-        	lastMove = state.optString("lastmove");
-        	if (state.optBoolean("initializing")) {
-        		initializeState(state);
-        	}
-        	else {
-        		render(state, false);
-        	}
-        }
-    };
     
     private void initializeState(JSONObject state) {
-
     	//Log.w(TAG, "initializing state");
-    	
+
         JSONArray board = state.optJSONArray("board");
         
         for (int i = 0; i < 15; i++) {
@@ -1311,10 +1315,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     }
     
     private void render(JSONObject message, boolean firstLoad) {
-
     	//Log.w(TAG, "rendering normal state");
+        numPlayers = mMultiplayer.getMembers().length;
         gameOver = message.optBoolean("gameover");
-        
         passCount = message.optInt("passcount");
     	
         JSONArray board = message.optJSONArray("board");
@@ -1331,13 +1334,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
         bag.fromJson(message.optJSONArray("bag"));
         for(int i = 0; i < numPlayers; i++) {
-            players[i].setScore(message.optJSONArray("scores").optInt(i));	
-            if(i == mMultiplayer.getLocalMemberIndex()) {
-            	players[i].setName(mMultiplayer.getUser(i).getName());
-            }
-            else {
-            	players[i].setName(message.optJSONArray("players").optString(i));
-            }
+            players[i].setScore(message.optJSONArray("scores").optInt(i));
         }
 
     	/*if (mMultiplayer.isMyTurn()) {
