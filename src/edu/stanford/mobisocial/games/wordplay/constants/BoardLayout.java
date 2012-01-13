@@ -20,4 +20,24 @@ public class BoardLayout {
 		{"NA","DL","NA","NA","NA","TL","NA","NA","NA","TL","NA","NA","NA","DL","NA"},
 		{"TL","NA","NA","NA","TW","NA","NA","DL","NA","NA","TW","NA","NA","NA","TL"}
 	};
+
+	public static String classicBoard[][] ={
+        {"TW","NA","NA","DL","NA","NA","NA","TW","NA","NA","NA","DL","NA","NA","TW"},
+        {"NA","DW","NA","NA","NA","TL","NA","NA","NA","TL","NA","NA","NA","DW","NA"},
+        {"NA","NA","DW","NA","NA","NA","DL","NA","DL","NA","NA","NA","DW","NA","NA"},
+        {"DL","NA","NA","DW","NA","NA","NA","DL","NA","NA","NA","DW","NA","NA","DL"},
+        {"NA","NA","NA","NA","DW","NA","NA","NA","NA","NA","DW","NA","NA","NA","NA"},
+
+        {"NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA"},
+        {"NA","NA","DL","NA","NA","NA","DL","NA","DL","NA","NA","NA","DL","NA","NA"},
+        {"TW","NA","NA","DL","NA","NA","NA","ST","NA","NA","NA","DL","NA","NA","TW"},
+        {"NA","NA","DL","NA","NA","NA","DL","NA","DL","NA","NA","NA","DL","NA","NA"},
+        {"NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA"},
+
+        {"NA","NA","NA","NA","DW","NA","NA","NA","NA","NA","DW","NA","NA","NA","NA"},
+        {"DL","NA","NA","DW","NA","NA","NA","DL","NA","NA","NA","DW","NA","NA","DL"},
+        {"NA","NA","DW","NA","NA","NA","DL","NA","DL","NA","NA","NA","DW","NA","NA"},
+        {"NA","DW","NA","NA","NA","TL","NA","NA","NA","TL","NA","NA","NA","DW","NA"},
+        {"TW","NA","NA","DL","NA","NA","NA","TW","NA","NA","NA","DL","NA","NA","TW"}
+    };
 }
