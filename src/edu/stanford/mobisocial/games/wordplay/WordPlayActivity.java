@@ -1091,6 +1091,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         @Override
         protected void onStateUpdate(JSONObject state) {
             lastMove = state.optString("lastmove");
+            tileRack.clearTiles();
             if (state.optBoolean("initializing")) {
                 initializeState(state);
             }
