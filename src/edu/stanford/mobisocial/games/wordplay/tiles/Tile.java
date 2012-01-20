@@ -395,7 +395,7 @@ public class Tile {
 		if(sprite.getY() > 318) {
 			return null;
 		}
-		return new Point(((int) sprite.getX() / 21), ((int) sprite.getY() / 21) - 1);
+		Point p = new Point(((int) sprite.getX() / 21), ((int) sprite.getY() / 21) - 1);
+		return (p.x < 0 || p.x > 14 || p.y < 0 || p.y > 14) ? null : p;
 	}
-	
 }
