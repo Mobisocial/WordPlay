@@ -28,7 +28,7 @@ public class TWLDictionary implements Dictionary{
 		InputStream in = null;
 		if (!file.exists()) {
 			try {
-				Log.w(TAG, "ref.dat doesn't exist, creating");
+				//Log.w(TAG, "ref.dat doesn't exist, creating");
 				in = mAssets.open("dict/ref.dat");
 				File refFile = new File(getBaseDirectory(), "ref.dat");
 				File fileDirectory = new File(getBaseDirectory());
@@ -42,7 +42,7 @@ public class TWLDictionary implements Dictionary{
 				}
 				
 				out.close();
-				Log.w(TAG, "ref.dat created");
+				//Log.w(TAG, "ref.dat created");
 			}
 			catch (Exception e) {
 				e.printStackTrace();
@@ -64,7 +64,7 @@ public class TWLDictionary implements Dictionary{
 			referenceFile = new RandomAccessFile(refFile, "r");
 
 			numWords = referenceFile.length() / fixed_width_length;
-			Log.w(TAG, "numWords = " + numWords);
+			//Log.w(TAG, "numWords = " + numWords);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -86,7 +86,7 @@ public class TWLDictionary implements Dictionary{
 		
 		byte[] buffer = new byte[1 + fixed_width_length];
 		referenceFile.seek(index * (1 + fixed_width_length));
-		Log.w(TAG, "index: " + index);
+		//Log.w(TAG, "index: " + index);
 		int read = referenceFile.read(buffer);
 		if (read != buffer.length) {
 			throw new IOException("Error reading word. Read " + read + ", expected " + buffer.length);
@@ -98,7 +98,7 @@ public class TWLDictionary implements Dictionary{
 	public boolean isWord(String word) {
 		word = word.toLowerCase();
 		if (word.length() < 2) {
-			Log.w(TAG, "too short");
+			//Log.w(TAG, "too short");
 			return false;
 		}
 		
@@ -108,7 +108,7 @@ public class TWLDictionary implements Dictionary{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		Log.w(TAG, "how did we get here");
+		//Log.w(TAG, "how did we get here");
 		return false;
 	}
 
@@ -118,7 +118,7 @@ public class TWLDictionary implements Dictionary{
 			mid = (min + max) / 2;
 			String midStr = lookUpWord(mid);
 			int cmp = midStr.compareTo(search);
-			Log.w(TAG, "comparing " + midStr + " to " + search);
+			//Log.w(TAG, "comparing " + midStr + " to " + search);
 			if (cmp == 0) {
 				return mid;
 			}
@@ -128,7 +128,7 @@ public class TWLDictionary implements Dictionary{
 				max = mid - 1;
 			}
 		}
-		Log.w(TAG, "word not found");
+		//Log.w(TAG, "word not found");
 		return -1;
 	}
 

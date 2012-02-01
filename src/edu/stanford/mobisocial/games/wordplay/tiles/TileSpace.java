@@ -55,7 +55,8 @@ public abstract class TileSpace {
             @Override
             public void run() {
         		scene.detachChild(TileSpace.this.tile);
-        		Log.w("tilespace", "finalizing: " + letter);
+        		//Log.w("tilespace", "finalizing: " + letter);
+        		
         		TileSpace.this.letterTile = new Sprite(x, y, (TextureRegion) context.letterTileRegions.get(Character.toLowerCase(letter)));
         		TileSpace.this.letterTile.setWidth(21);
         		TileSpace.this.letterTile.setHeight(21);

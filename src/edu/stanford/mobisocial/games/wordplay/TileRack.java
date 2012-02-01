@@ -52,9 +52,9 @@ public class TileRack {
 			tiles = new Tile[7];
 			numTiles = 0;
 			for(int i = 0; i < 7; i++) {
-				if(tilesJson == null) { Log.w("tilerack", "WTF: " + tilesJson.toString());}
+				if(tilesJson == null) { /*Log.w("tilerack", "WTF: " + tilesJson.toString());*/}
 				if (!tilesJson.getString(i).equals("?")) {
-					Log.w("tilerack", "inserting " + tilesJson.getString(i).charAt(0));
+					//Log.w("tilerack", "inserting " + tilesJson.getString(i).charAt(0));
 					this.addTile(scene, tilesJson.getString(i).charAt(0));
 					//this.insertTileAtPos(scene, new Tile(context, scene, tilesJson.getString(i).charAt(0), i, showMe), i);
 				}
@@ -106,14 +106,14 @@ public class TileRack {
 					}
 					letterCount++;
 					if (!atleastOne) {
-						Log.w(TAG, "atleast one");
+						//Log.w(TAG, "atleast one");
 						atleastOne = true;
 						anchor = coordinates;
 					}
 					else {
 						if (vertical) {
 							if (coordinates.x != anchor.x) {
-								Log.w(TAG, "not vertical");
+								//Log.w(TAG, "not vertical");
 								return null;
 							}
 							if (coordinates.y < minPos) {
@@ -125,7 +125,7 @@ public class TileRack {
 						}
 						else if (horizontal) {
 							if (coordinates.y != anchor.y) {
-								Log.w(TAG, "not horizontal");
+								//Log.w(TAG, "not horizontal");
 								return null;
 							}
 							if (coordinates.x < minPos) {
@@ -137,39 +137,39 @@ public class TileRack {
 						}
 						else {
 							if (coordinates.x == anchor.x) {
-								Log.w(TAG, "checking vertical");
+								//Log.w(TAG, "checking vertical");
 								vertical = true;
 								minPos = Math.min(coordinates.y, anchor.y);
 								maxPos = Math.max(coordinates.y, anchor.y);;
 							}
 							else if (coordinates.y == anchor.y) {
-								Log.w(TAG, "checking horizontal");
+								//Log.w(TAG, "checking horizontal");
 								horizontal = true;
 								minPos = Math.min(coordinates.x, anchor.x);
 								maxPos = Math.max(coordinates.x, anchor.x);;
 							}
 							else {
-								Log.w(TAG, "not aligned at all");
+								//Log.w(TAG, "not aligned at all");
 								return null;
 							}
 						}
 					}
 
-					Log.w(TAG, "min: " + minPos + ", max: " + maxPos + ", count: " + letterCount);
+					//Log.w(TAG, "min: " + minPos + ", max: " + maxPos + ", count: " + letterCount);
 				}
 			}
 		}
 		if (firstPlay && !hitsStartTile) {
-			Log.w(TAG, "doesn't hit start tile");
+			//Log.w(TAG, "doesn't hit start tile");
 			return null;
 		}
 		if (!firstPlay && !adjacentTile) {
-			Log.w(TAG, "no adjacent tile");
+			//Log.w(TAG, "no adjacent tile");
 			return null;
 		}
 		//no tiles placed on board
 		if (!atleastOne) {
-			Log.w(TAG, "no tiles placed");
+			//Log.w(TAG, "no tiles placed");
 			return null;
 		}
 
@@ -199,7 +199,7 @@ public class TileRack {
 		for(int i = minPos-1; i >= 0; i--) {
 			if (vertical) {
 				if (context.tileSpaces[anchor.x][i].getLetter() != '0') {
-					Log.w(TAG, "determining earlier letter " +context.tileSpaces[anchor.x][i].getLetter());
+					//Log.w(TAG, "determining earlier letter " +context.tileSpaces[anchor.x][i].getLetter());
 					minPos = i;
 				}
 				else {
@@ -208,7 +208,7 @@ public class TileRack {
 			}
 			else if (horizontal) {
 				if (context.tileSpaces[i][anchor.y].getLetter() != '0') {
-					Log.w(TAG, "determining earlier letter " +context.tileSpaces[i][anchor.y].getLetter());
+					//Log.w(TAG, "determining earlier letter " +context.tileSpaces[i][anchor.y].getLetter());
 					minPos = i;
 				}
 				else {
@@ -220,7 +220,7 @@ public class TileRack {
 		for(int i = maxPos+1; i < 15; i++) {
 			if (vertical) {
 				if (context.tileSpaces[anchor.x][i].getLetter() != '0') {
-					Log.w(TAG, "determining later letter " +context.tileSpaces[anchor.x][i].getLetter());
+					//Log.w(TAG, "determining later letter " +context.tileSpaces[anchor.x][i].getLetter());
 					maxPos = i;
 				}
 				else {
@@ -229,7 +229,7 @@ public class TileRack {
 			}
 			else if (horizontal) {
 				if (context.tileSpaces[i][anchor.y].getLetter() != '0') {
-					Log.w(TAG, "determining later letter " +context.tileSpaces[i][anchor.y].getLetter());
+					//Log.w(TAG, "determining later letter " +context.tileSpaces[i][anchor.y].getLetter());
 					maxPos = i;
 				}
 				else {
@@ -241,16 +241,17 @@ public class TileRack {
 
 		//start building letter coordinate list for word from placed tiles
 		TilePoint[] wordCoordinates = new TilePoint[maxPos-minPos+1];
-		Log.w(TAG, "building coordinates for " + wordCoordinates.length + " letters");
+		//Log.w(TAG, "building coordinates for " + wordCoordinates.length + " letters");
 		for (int i = 0; i < 7; i++) {
 			if (tiles[i] != null) {
 				Point coordinates = tiles[i].getCoordinates();
+				char letter = tiles[i].getLetter();
 				if (coordinates != null) {
 					if (vertical) {
-						wordCoordinates[coordinates.y-minPos] = new TilePoint(coordinates, true);
+						wordCoordinates[coordinates.y-minPos] = new TilePoint(coordinates, letter, true);
 					}
 					else if (horizontal) {
-						wordCoordinates[coordinates.x-minPos] = new TilePoint(coordinates, true);;
+						wordCoordinates[coordinates.x-minPos] = new TilePoint(coordinates, letter, true);
 					}
 				}
 			}
@@ -261,11 +262,11 @@ public class TileRack {
 			if (vertical) {
 				if (wordCoordinates[i-minPos] == null) {
 					if (context.tileSpaces[anchor.x][i].getLetter() != '0') {
-						Log.w(TAG, "determining intermediate letter " +context.tileSpaces[anchor.x][i].getLetter());
-						wordCoordinates[i-minPos] = new TilePoint(anchor.x, i, false);
+						//Log.w(TAG, "determining intermediate letter " +context.tileSpaces[anchor.x][i].getLetter());
+						wordCoordinates[i-minPos] = new TilePoint(anchor.x, i, context.tileSpaces[anchor.x][i].getLetter(), false);
 					}
 					else {
-						Log.w(TAG, "not sequential");
+						//Log.w(TAG, "not sequential");
 						return null;
 					}
 				}
@@ -273,11 +274,11 @@ public class TileRack {
 			else if (horizontal) {
 				if (wordCoordinates[i-minPos] == null) {
 					if (context.tileSpaces[i][anchor.y].getLetter() != '0') {
-						Log.w(TAG, "determining intermediate letter " +context.tileSpaces[i][anchor.y].getLetter());
-						wordCoordinates[i-minPos] = new TilePoint(i, anchor.y, false);
+						//Log.w(TAG, "determining intermediate letter " +context.tileSpaces[i][anchor.y].getLetter());
+						wordCoordinates[i-minPos] = new TilePoint(i, anchor.y, context.tileSpaces[i][anchor.y].getLetter(), false);
 					}
 					else {
-						Log.w(TAG, "not sequential");
+						//Log.w(TAG, "not sequential");
 						return null;
 					}
 				}
@@ -407,12 +408,12 @@ public class TileRack {
 	public boolean noOverlaps(int pos, int testX, int testY) {
 		if(tiles[pos] == null) return true;
 		for(int i = 0; i < 7; i++) {
-			Log.w(TAG, "comparing " + pos + " to " + i);
+			//Log.w(TAG, "comparing " + pos + " to " + i);
 			if (pos != i && tiles[i] != null && tiles[i].overlaps(testX, testY)) {
-				Log.w(TAG, "found overlap");
+				//Log.w(TAG, "found overlap");
 				return false;
 			}
-			Log.w(TAG, "no overlap");
+			//Log.w(TAG, "no overlap");
 		}
 		return true;
 	}
@@ -422,7 +423,7 @@ public class TileRack {
 		if(pos < 0 || pos > 6) {
 			return;
 		}
-		Log.w(TAG, "moving " + tile.getPos() + " to " + pos);
+		//Log.w(TAG, "moving " + tile.getPos() + " to " + pos);
 		if (tile.getPos() == pos) {
 			tile.setPos(pos);
 			return;
@@ -442,7 +443,7 @@ public class TileRack {
 			tile.setPos(pos);
 			tiles[pos] = tile;
 			while (counter < 6 && current != null) {
-				Log.w(TAG, counter + "");
+				//Log.w(TAG, counter + "");
 				previous.setPos(counter);
 				tiles[counter] = previous;
 				previous = current;
@@ -463,7 +464,7 @@ public class TileRack {
 			tiles[pos] = tile;
 			
 			while(counter > 0 && current != null) {
-				Log.w(TAG, counter + "");
+				//Log.w(TAG, counter + "");
 				later.setPos(counter);
 				tiles[counter] = later;
 				later = current;

@@ -67,7 +67,7 @@ public class Tile {
 	            			//int tempY = ((int) y / 21) - 1;
 	                        Tile.this.xPos = tempXPos;
 	                        Tile.this.yPos = tempYPos;
-	                        Log.w("tile", "setting position to " + xPos + ", " + yPos);
+	                        //Log.w("tile", "setting position to " + xPos + ", " + yPos);
 	            			x = tempXPos * 21 + 3;
 	            			y = tempYPos * 21 + 23;
 	            			Tile.this.setPosition(x, y);
@@ -188,7 +188,7 @@ public class Tile {
 	
 	
 	public boolean overlaps(int testX, int testY) {
-		Log.w("tile", this.xPos + " vs " + testX + " AND " + this.yPos + " vs " + testY);
+		//Log.w("tile", this.xPos + " vs " + testX + " AND " + this.yPos + " vs " + testY);
 		return (testX != -1 && testY != -1 && this.xPos == testX && this.yPos == testY);
 	}
 	

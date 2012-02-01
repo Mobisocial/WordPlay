@@ -129,7 +129,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     User musubiMe;
     
     String lastMove = "";
-
+    char[][] boardRep;
     private Sprite xCross, yCross;
     
     private WordPlayMultiplayer mMultiplayer;
@@ -155,6 +155,13 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		showingPicker = false;
 		startCoordinate = null;
 
+		boardRep = new char[16][16];
+		for (int i = 0; i < 16; i++) {
+			for (int j = 0; j < 16; j++) {
+				boardRep[i][j] = '0';
+			}
+		}
+		
 		this.mCamera = new ZoomCamera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);  
 		//final int alturaTotal = CAMERA_HEIGHT*3;
 		this.mCamera.setBounds(0, CAMERA_WIDTH, 0, CAMERA_HEIGHT);
@@ -509,6 +516,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         				}
         				
         				for (int i = 0; i < wordCoordinates.length; i++) {
+        					boardRep[wordCoordinates[i].x][wordCoordinates[i].y] = wordCoordinates[i].letter; 
         					tileSpaces[wordCoordinates[i].x][wordCoordinates[i].y].setUsed();
         				}
         				while(tileRack.numTiles < 7 && bag.tilesRemaining() > 0) {
@@ -819,7 +827,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
 		
 		mMusubi = Musubi.getInstance(this, getIntent());
-		Log.d(TAG, "EXTRAS " + getIntent().getExtras());
+		//Log.d(TAG, "EXTRAS " + getIntent().getExtras());
         mMultiplayer = new WordPlayMultiplayer(mMusubi.getObj());
 
         if (mMultiplayer.getLocalMemberIndex() >= 0) {
@@ -1061,7 +1069,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		if (showingPicker) {
 			return;
 		}
-		Log.d(TAG, "Scroll {x:"+pDistanceX+", y: "+pDistanceY+"}");
+		//Log.d(TAG, "Scroll {x:"+pDistanceX+", y: "+pDistanceY+"}");
 		this.mCamera.offsetCenter(-pDistanceX, -pDistanceY);
 	}
 	 
@@ -1104,6 +1112,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             JSONObject state = getLatestState() == null ? new JSONObject() : getLatestState();
             numPlayers = getMembers().length;
             JSONArray board = new JSONArray();
+            
             try {
                 state.put("passcount", passCount);
                 state.put("gameover", gameOver);
@@ -1114,10 +1123,22 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 else {
                     state.put("initializing", false);
                 }
-                for (int i = 0; i < 15; i++) {
+                
+
+                
+                /*for (int i = 0; i < 15; i++) {
                     JSONArray row = new JSONArray();
                     for (int j = 0; j < 15; j++) {
                         row.put(tileSpaces[i][j].getLetter() + "");
+                        Log.w(TAG, tileSpaces[i][j].getLetter() + "");
+                    }
+                    board.put(row);
+                }*/
+
+                for (int i = 0; i < 16; i++) {
+                    JSONArray row = new JSONArray();
+                    for (int j = 0; j < 16; j++) {
+                        row.put(boardRep[i][j] + "");
                     }
                     board.put(row);
                 }
@@ -1175,7 +1196,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                     }
                 }
                 state.put("racks", racks);
-                Log.w(TAG, racks.toString());
+                //Log.w(TAG, racks.toString());
                 
                 JSONArray scores = new JSONArray();
                 scores.put(players[0].getScore());
@@ -1195,7 +1216,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             } catch (JSONException e) {
                 //Log.wtf(TAG, "Failed to get board state", e);
             }
-            Log.d(TAG, "SETTING APP STATE " + state);
+            //Log.d(TAG, "SETTING APP STATE " + state);
             return state;
         }
 
@@ -1266,7 +1287,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 			tileRack.unsetLetters(scene);
 		}
 		else {
-			Log.w(TAG, "not a valid placement");
+			//Log.w(TAG, "not a valid placement");
 			titleText.setText(lastMove);
 		}
     }
@@ -1326,6 +1347,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         	JSONArray row = board.optJSONArray(i);
         	for (int j = 0; j < 15; j++) {
         		char c = row.optString(j).charAt(0);
+        		boardRep[i][j] = c;
         		tileSpaces[i][j].setLetter(c);
         		if (c != '0') {
         			tileSpaces[i][j].setUsed();
@@ -1333,6 +1355,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         		}
         	}
         }
+        
         bag.fromJson(message.optJSONArray("bag"));
         for(int i = 0; i < numPlayers; i++) {
             players[i].setScore(message.optJSONArray("scores").optInt(i));
