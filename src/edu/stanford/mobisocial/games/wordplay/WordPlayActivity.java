@@ -830,6 +830,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		//Log.d(TAG, "EXTRAS " + getIntent().getExtras());
         mMultiplayer = new WordPlayMultiplayer(mMusubi.getObj());
 
+        Log.w(TAG, "local index: " + mMultiplayer.getLocalMemberIndex());
+        Log.w(TAG, "member 0: " + mMultiplayer.getUser(0).getId());
+        Log.w(TAG, "userid: " + mMultiplayer.getLocalUser().getId());
         if (mMultiplayer.getLocalMemberIndex() >= 0) {
         	players[mMultiplayer.getLocalMemberIndex()].setName(mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName());
         }
