@@ -50,8 +50,8 @@ public class Tile {
     				//Log.w("tile", "adjusted to: " + x + ", " + y);
     			}
     			
-    			int tempXPos = (int)(x-3)/21;
-        		int tempYPos = (int)(y-23)/21;
+    			int tempXPos = (int)(x-WordPlayActivity.OFFSET_X)/21;
+        		int tempYPos = (int)(y-WordPlayActivity.OFFSET_Y)/21;
         		
     			
             	if(pSceneTouchEvent.isActionUp()){
@@ -68,8 +68,8 @@ public class Tile {
 	                        Tile.this.xPos = tempXPos;
 	                        Tile.this.yPos = tempYPos;
 	                        //Log.w("tile", "setting position to " + xPos + ", " + yPos);
-	            			x = tempXPos * 21 + 3;
-	            			y = tempYPos * 21 + 23;
+	            			x = tempXPos * 21 + WordPlayActivity.OFFSET_X;
+	            			y = tempYPos * 21 + WordPlayActivity.OFFSET_Y;
 	            			Tile.this.setPosition(x, y);
 	            			lastX = x;
 	            			lastY = y;
@@ -77,6 +77,9 @@ public class Tile {
 	            			if (points == 0) {
 	            				context.showingPicker = true;
 		            			blankTilePicker = new HUD();
+
+		            	        Sprite uiSkin = new Sprite(0, 0, context.uiSkinDarkenRegion);
+		            			blankTilePicker.attachChild(uiSkin);
 		            			int j = 0;
 		            			int k = 0;
 		            			for(char let = 'a'; let <= 'z'; let++) {
@@ -116,7 +119,7 @@ public class Tile {
             				}
             			}
             		}
-            		else if (y >= 338 && y <= 383) {
+            		else if (y >= 358 && y <= 393) {
             			//moveToHud();
             			returnToRack();
             			context.tileRack.insertTileAtPos(scene, Tile.this, ((int)x-3) / 45);
@@ -145,8 +148,8 @@ public class Tile {
 		this.context = context;
 		this.scene = scene;
 		pos = i;
-		lastX = 3+45*pos;
-		lastY = 338;
+		lastX = WordPlayActivity.OFFSET_X+45*pos;
+		lastY = 358;//338;
 		lastSize = 45;
 		inHud = true;
 		showMe = showme;
@@ -195,8 +198,8 @@ public class Tile {
 	public void setLetter(char let, final boolean toBoard) {
 		letter = let;
 		if (!toBoard) {
-			lastX = 3+45*pos;
-			lastY = 338;
+			lastX = WordPlayActivity.OFFSET_X+45*pos;
+			lastY = 358;
 		}
 		context.runOnUpdateThread(new Runnable() {
             @Override
@@ -259,9 +262,9 @@ public class Tile {
 	public void setPos(int i) {
 		if(!showMe) { return; }
 		pos = i;
-		if (sprite.getY() >= 338 && sprite.getY() <= 383) {
-			lastX = 4+45*pos;
-			lastY = 338;
+		if (sprite.getY() >= 358 && sprite.getY() <= 403) {
+			lastX = WordPlayActivity.OFFSET_X+45*pos;
+			lastY = 358;
 			lastSize = 45;
 			sprite.setPosition(lastX, lastY);
 		}
@@ -306,7 +309,7 @@ public class Tile {
 		        
 		        setSize(45, false);
 		        //Log.w("Tile", scene.getChildIndex(sprite) + "");
-				Tile.this.setPosition(3+45*pos, 338);
+				Tile.this.setPosition(WordPlayActivity.OFFSET_X+45*pos, 358);
 				context.showTentativePoints();
             }
     	});
