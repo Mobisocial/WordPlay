@@ -43,6 +43,7 @@ public class TileRack {
 	}
 	
 	public void fromJson(Scene scene, JSONArray tilesJson) {
+	    clearTiles();
 		try {
 			for (int i = 0; i < 7; i++) {
 				if (tiles[i] != null) {
