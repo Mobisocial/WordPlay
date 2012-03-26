@@ -509,7 +509,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
            public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY) {
                if (pSceneTouchEvent.isActionUp()) {
                    long up = System.currentTimeMillis();
-                   if (lastDown != 0 && up - lastDown > LONGPRESS_THRESHOLD) {
+                   if (lastDown != null && up - lastDown > LONGPRESS_THRESHOLD) {
                        if (mMultiplayer.isMyTurn()) {
                            try {
                                JSONObject state = mMultiplayer.getLatestState();
