@@ -477,9 +477,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         JSONObject state = mMultiplayer.getLatestState();
         bag = new TileBag();
         bag.fromJson(mMultiplayer.getLatestState().optJSONArray(OBJ_BAG));
-        for(int i = 0; i < numPlayers; i++) {
-            players[i].setScore(state.optJSONArray(OBJ_SCORES).optInt(i));
-        }
 
 		this.mScrollDetector = new SurfaceScrollDetector(this);
 		this.mScrollDetector.setEnabled(true);
@@ -492,42 +489,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		
 		numPlayers = 0;
 		passCount = 0;       
-		
-		//Sprite boardBackground = new Sprite(OFFSET_X, OFFSET_Y, boardBackgroundRegion);
-		//scene.attachChild(boardBackground); 
-
-		JSONArray layout = mMultiplayer.getLatestState().optJSONArray(OBJ_LAYOUT);
-		if (layout == null || layout.length() < BOARD_SIZE) {
-		    Toast.makeText(this, "Failed to load board layout.", Toast.LENGTH_LONG).show();
-		    finish();
-		}
-
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            JSONArray row = layout.optJSONArray(i);
-        	for (int j = 0; j < BOARD_SIZE; j++) {
-        	    String square = row.optString(j);
-        		if (square.equals("DL")) {
-        			tileSpaces[i][j] = new DoubleLetterTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
-        		}
-        		else if (square.equals("TL")) {
-        			tileSpaces[i][j] = new TripleLetterTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
-        		}
-        		else if (square.equals("DW")) {
-        			tileSpaces[i][j] = new DoubleWordTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
-        		}
-        		else if (square.equals("TW")) {
-        			tileSpaces[i][j] = new TripleWordTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
-        		}
-        		else if (square.equals("ST")) {
-        			tileSpaces[i][j] = new StartTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
-        			startCoordinate = new Point(i, j);
-        		}
-        		else {
-        			tileSpaces[i][j] = new BasicTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
-        		}
-        		tileSpaces[i][j].draw(scene);
-        	}
-        }
 
         titleText = new ChangeableText(70, 12, this.mFont, "Player 1 played 'quixotic' for 100 points.", "Player 1 played 'quixotic' for 100 points.".length());
         
@@ -556,6 +517,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                                state.put(OBJ_LAYOUT, layoutForBoard(BoardLayout.classicBoard));
                                Toast.makeText(WordPlayActivity.this, "Classicist", Toast.LENGTH_SHORT).show();
                                mMultiplayer.takeTurn(me, state);
+                               render();
                            } catch (JSONException e) {
                                Toast.makeText(WordPlayActivity.this, "Failed to load board", Toast.LENGTH_SHORT).show();
                            }
@@ -709,8 +671,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         };
         hud.attachChild(playButton);
         hud.registerTouchArea(playButton);
-        
-        
+
 
 		clearButton = new Button(115, 404, clearButtonRegion){
             @Override
@@ -745,10 +706,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         };
         hud.attachChild(shuffleButton);
         hud.registerTouchArea(shuffleButton);
-        
-
-        
-        
 
 		swapButton = new Button(65, 404, swapButtonRegion){
             @Override
@@ -955,8 +912,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         mCamera.setHUD(hud);
         scene.setOnSceneTouchListener(this);
         scene.setTouchAreaBindingEnabled(true);
-        
-        
+
 		return scene;
 	}
 
@@ -1064,19 +1020,11 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		
 		if (mMultiplayer.isMyTurn()) {
 			titleText.setText("Your turn");
-		}
-		else {
+		} else {
 			titleText.setText(players[mMultiplayer.getGlobalMemberCursor()].getShortName() + "'s turn");
 		}
 		
-        if(mMultiplayer.getLatestState() == null) {
-        	//Toast.makeText(this, "latest state is null", Toast.LENGTH_SHORT).show();
-        	if(!mMultiplayer.isMyTurn()) {
-        		tileRack = new TileRack(this, true);
-        	}
-        } else {
-        	render();
-        }
+		render();
         
 	}
 	// ===========================================================
@@ -1457,6 +1405,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         gameOver = message.optBoolean("gameover");
         passCount = message.optInt("passcount");
 
+        // board layout
+        renderBoardLayout(mMultiplayer.getLatestState().optJSONArray(OBJ_LAYOUT));
+
+        // game state
         JSONArray board = message.optJSONArray(OBJ_BOARD_STATE);
         for (int i = 0; i < BOARD_SIZE; i++) {
         	JSONArray row = board.optJSONArray(i);
@@ -1469,6 +1421,11 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             		tileSpaces[i][j].finalizeLetter(WordPlayActivity.this, scene);
         		}
         	}
+        }
+
+        // scores
+        for(int i = 0; i < numPlayers; i++) {
+            players[i].setScore(message.optJSONArray(OBJ_SCORES).optInt(i));
         }
 
         lastMove = message.optString("lastmove");
@@ -1563,6 +1520,40 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     	if (mMultiplayer.isMyTurn() && !gameOver) {
     		Toast.makeText(WordPlayActivity.this, "Your turn!", Toast.LENGTH_SHORT).show();
 		}
+    }
+
+    void renderBoardLayout(JSONArray layout) {
+        if (layout == null || layout.length() < BOARD_SIZE) {
+            Toast.makeText(this, "Failed to load board layout.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            JSONArray row = layout.optJSONArray(i);
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                String square = row.optString(j);
+                if (square.equals("DL")) {
+                    tileSpaces[i][j] = new DoubleLetterTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
+                }
+                else if (square.equals("TL")) {
+                    tileSpaces[i][j] = new TripleLetterTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
+                }
+                else if (square.equals("DW")) {
+                    tileSpaces[i][j] = new DoubleWordTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
+                }
+                else if (square.equals("TW")) {
+                    tileSpaces[i][j] = new TripleWordTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
+                }
+                else if (square.equals("ST")) {
+                    tileSpaces[i][j] = new StartTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
+                    startCoordinate = new Point(i, j);
+                }
+                else {
+                    tileSpaces[i][j] = new BasicTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
+                }
+                tileSpaces[i][j].draw(scene);
+            }
+        }
     }
     
     private boolean isFirstPlay() {
