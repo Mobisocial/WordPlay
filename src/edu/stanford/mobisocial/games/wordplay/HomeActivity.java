@@ -1,10 +1,6 @@
 package edu.stanford.mobisocial.games.wordplay;
 
-import java.util.Set;
-
-import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbObj;
-import mobisocial.socialkit.musubi.DbUser;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -13,7 +9,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -52,18 +47,12 @@ public class HomeActivity extends Activity {
             return;
         }
 
-        mMusubi = Musubi.getInstance(this);
+        mMusubi = Musubi.forIntent(this, getIntent());
         String[] projection = null;
         String selection = "type = ?";
         String[] selectionArgs = new String[] { "app" };
         String order = null;
-        Cursor cursor = mMusubi.getAppFeed().query(projection, selection, selectionArgs, order);
-
-        
-        Set<DbUser> users = mMusubi.getAppFeed().getRemoteUsers();
-        for (DbUser u : users) {
-            Log.d(TAG, "user " + u.getName());
-        }
+        Cursor cursor = mMusubi.queryAppData(projection, selection, selectionArgs, order);
 
         ListView lv = (ListView)findViewById(R.id.gamelist);
         GameSummaryAdapter gsa = new GameSummaryAdapter(this, cursor);
@@ -95,8 +84,8 @@ public class HomeActivity extends Activity {
             DbObj obj = (DbObj)view.getTag();
             Intent game = new Intent(Intent.ACTION_VIEW);
             game.setClass(HomeActivity.this, WordPlayActivity.class);
-            game.putExtra(Musubi.EXTRA_FEED_URI, DbFeed.uriForName(obj.getFeedName()));
-            game.putExtra(Musubi.EXTRA_OBJ_HASH, obj.getHash());
+            game.putExtra(Musubi.EXTRA_FEED_URI, obj.getContainingFeed().getUri());
+            //game.setDataAndType(obj.getUri(), Musubi.mimeTypeFor("wordplay"));
             startActivity(game);
         }
     }

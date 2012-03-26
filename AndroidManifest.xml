@@ -16,12 +16,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="WordPlayActivity"
+ 
+        
+        <activity android:name=".WordPlayKickoffActivity"
+          android:label="@string/app_name">
+           <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="musubi.intent.category.MENU" />
+                <category android:name="musubi.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+		<activity android:name=".WordPlayActivity"
                   android:label="@string/app_name">
             <intent-filter>
-                <action android:name="mobisocial.intent.action.MULTIPLAYER" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.musubi.obj/wordplay"/>
             </intent-filter>
         </activity>
     </application>

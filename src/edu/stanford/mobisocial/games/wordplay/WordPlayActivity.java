@@ -7,7 +7,7 @@ import mobisocial.socialkit.User;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.musubi.multiplayer.FeedRenderable;
-import mobisocial.socialkit.musubi.multiplayer.TurnBasedMultiplayer;
+import mobisocial.socialkit.musubi.multiplayer.TurnBasedApp;
 
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.ZoomCamera;
@@ -136,7 +136,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	
 	Button playButton, clearButton, shuffleButton, swapButton, passButton, homeButton;
 	
-
+	static final int TILES_PER_RACK = 7;
 	Player players[];
 	int numPlayers;
 	int passCount;
@@ -950,9 +950,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
 	@Override
 	public void onLoadComplete() {
-		// TODO Auto-generated method stub
 		if (!Musubi.isMusubiInstalled(getApplicationContext())) {
-			
+			// TODO: this is never seen because the activity can't be launched without Musubi.
+		    // Move to appropriate home activity
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setMessage("WordPlay requires the Musubi Social Platform")
 			       .setCancelable(false)
@@ -964,18 +964,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 			           }
 			       });
 			AlertDialog alert = builder.create();
-			alert.show();
-			
-			
+			alert.show();	
 		}
-		if (!Musubi.isMusubiIntent(getIntent())) {
-            Toast.makeText(this, "Please launch with 2-players!", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-		
-		mMusubi = Musubi.getInstance(this, getIntent());
-		//Log.d(TAG, "EXTRAS " + getIntent().getExtras());
+
+		mMusubi = Musubi.forIntent(this, getIntent());
         mMultiplayer = new WordPlayMultiplayer(mMusubi.getObj());
 
         Log.w(TAG, "local index: " + mMultiplayer.getLocalMemberIndex());
@@ -1285,23 +1277,33 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	// Inner and Anonymous Classes
 	// =========================================================== 
 
-    class WordPlayMultiplayer extends TurnBasedMultiplayer {
+    class WordPlayMultiplayer extends TurnBasedApp {
         public WordPlayMultiplayer(DbObj obj) {
             super(obj);
         }
 
         @Override
         protected FeedRenderable getFeedView(JSONObject arg0) {
-            return FeedRenderable.fromHtml(getSnapshotHtml());
-        }
-
-        @Override
-        protected JSONObject getInitialState() {
-            for (int i = 0; i < getMembers().length; i++) {
-                players[i].setName(getUser(i).getName());
+            StringBuilder html = new StringBuilder("<html><head>");
+            html.append("<body style=\"width:200px\">");
+            html.append("<span style=\"font-weight:bold;\">WordPlay Scoreboard</span>");
+            html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
+            html.append("<table>");
+            for (int i = 0; i < numPlayers; i++) {
+                if ((getGlobalMemberCursor())%numPlayers == i) {
+                    html.append("<tr><td><span style=\"font-weight:bold; color: #FF752B;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+                }
+                else {
+                    html.append("<tr><td><span style=\"font-weight:bold; color: #ffffff;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+                }
             }
-            lastMove = getLocalUser().getName() + " started a game";
-            return getApplicationState();
+            html.append("</table>");
+            html.append("</div>").append(lastMove).append("<div style=\"text-align: right;\">");
+            html.append(bag.tilesRemaining()).append(" tiles remaining");
+            html.append("</div></body>");
+
+            html.append("</html>");
+            return FeedRenderable.fromHtml(html.toString());
         }
 
         @Override
@@ -1363,38 +1365,19 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                     opponentRacks[i] = new TileRack(WordPlayActivity.this, false);
                 }
                 
-                if(getLatestState() == null) {      
-                    while(tileRack.numTiles < 7 && bag.tilesRemaining() > 0) {
-                        tileRack.addTile(scene, bag.getNextTile());
-                    }
-                    for(int i = 0; i < numPlayers-1; i++) {
-                        while(opponentRacks[i].numTiles < 7 && bag.tilesRemaining() > 0) {
-                            //Log.w(TAG, "creating new tiles for opponent");
-                            opponentRacks[i].addTile(scene, bag.getNextTile());
-                        }
-                    }
-                }
-                else {
-                    JSONArray oldRacks = mMultiplayer.getLatestState().getJSONArray("racks");
-                    /*Log.w(TAG, "getting tiles for opponent from state");
-                    Log.w(TAG, oldRacks.toString());
-                    Log.w(TAG, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2).toString());
-                    Log.w(TAG, (mMultiplayer.getLocalMemberIndex()+1)%2 + "");*/
-                    //opponentRack.fromJson(scene, oldRacks.getJSONArray((mMultiplayer.getLocalMemberIndex()+1)%2));
-                    
-                    int j = 0;
-                    for(int i = 0; i < numPlayers; i++) {
-                        if (i != getLocalMemberIndex()) {
-                            opponentRacks[j].fromJson(scene, oldRacks.getJSONArray(i));
-                            j++;
-                        }
+                JSONArray oldRacks = mMultiplayer.getLatestState().getJSONArray("racks");
+                int j = 0;
+                for(int i = 0; i < numPlayers; i++) {
+                    if (i != getLocalMemberIndex()) {
+                        opponentRacks[j].fromJson(scene, oldRacks.getJSONArray(i));
+                        j++;
                     }
                 }
 
                 tileCount.setText(bag.tilesRemaining() + "");
                 state.put("bag", bag.toJson());
                 
-                int j = 0;
+                j = 0;
                 for(int i = 0; i < numPlayers; i++) {
                     if (i == getLocalMemberIndex()) {
                         racks.put(tileRack.toJson());
@@ -1426,29 +1409,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             }
             //Log.d(TAG, "SETTING APP STATE " + state);
             return state;
-        }
-
-        public String getSnapshotHtml() {
-            StringBuilder html = new StringBuilder("<html><head>");
-            html.append("<body>");
-            html.append("<span style=\"font-weight:bold;\">WordPlay Scoreboard</span>");
-            html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
-            html.append("<table>");
-            for (int i = 0; i < numPlayers; i++) {
-                if ((getGlobalMemberCursor())%numPlayers == i) {
-                    html.append("<tr><td><span style=\"font-weight:bold; color: #FF752B;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
-                }
-                else {
-                    html.append("<tr><td><span style=\"font-weight:bold; color: #ffffff;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
-                }
-            }
-            html.append("</table>");
-            html.append("</div>").append(lastMove).append("<div style=\"text-align: right;\">");
-            html.append(bag.tilesRemaining()).append(" tiles remaining");
-            html.append("</div></body>");
-
-            html.append("</html>");
-            return html.toString();
         }
     }
     
@@ -1689,5 +1649,42 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     	}
     	return true;
     }
-    
+
+    public static JSONObject getInitialState(int numPlayers) {
+        JSONObject state = new JSONObject();
+        try {
+            // need board, bag, racks
+            state.put("initializing", true);
+            JSONArray board = new JSONArray();
+            for (int i = 0; i < 16; i++) {
+                JSONArray row = new JSONArray();
+                for (int j = 0; j < 16; j++) {
+                    row.put("0");
+                }
+                board.put(row);
+            }            
+
+            TileBag bag = new TileBag();
+            assert(bag.tilesRemaining() > numPlayers * 7);
+
+            JSONArray racks = new JSONArray();
+            JSONArray scores = new JSONArray();
+            for (int i = 0; i < numPlayers; i++) {
+                JSONArray rack = new JSONArray();
+                for (int j = 0; j < TILES_PER_RACK; j++) {
+                    rack.put("" + bag.getNextTile());
+                    scores.put(0);
+                }
+                racks.put(rack);
+            }
+            state.put("board", board);
+            state.put("bag", bag.toJson());
+            state.put("racks", racks);
+            state.put("scores", scores);
+            return state;   
+        } catch (JSONException e) {
+            Log.e(TAG, "impossible exception", e);
+            throw new IllegalStateException("error getting initial state", e);
+        }
+    }
 }
