@@ -11,7 +11,8 @@ import edu.stanford.mobisocial.games.wordplay.WordPlayActivity;
 import edu.stanford.mobisocial.games.wordplay.constants.LetterValues;
 
 public class Tile {
-
+	public static final String TAG = "tile";
+	
 	private char letter;
 	private int points;
 	private Sprite sprite, overlay, active;
@@ -53,10 +54,9 @@ public class Tile {
     				float originX = centerX - (context.mCamera.getBoundsWidth()/(context.mCamera.getZoomFactor()*2));
     				float originY = centerY - (context.mCamera.getBoundsHeight()/(context.mCamera.getZoomFactor()*2));
     				
-    				x = (x/context.mCamera.getZoomFactor()) + originX;
-    				y = (y/context.mCamera.getZoomFactor()) + originY;
-    				//Log.w("tile", "adjusted to: " + x + ", " + y);
-    			}
+					x = (x/context.mCamera.getZoomFactor()) + originX;
+					y = (y/context.mCamera.getZoomFactor()) + originY;
+				}
     			
     			int tempXPos = (int)(x-WordPlayActivity.OFFSET_X)/21;
         		int tempYPos = (int)(y-WordPlayActivity.OFFSET_Y)/21;
@@ -65,6 +65,18 @@ public class Tile {
             	if(pSceneTouchEvent.isActionUp()){
             		draggedFromHud = false;
             		dragging = false;
+            		
+            		Log.w(TAG, "x=" + x + ", y=" + y);
+            		if (context.mCamera.getZoomFactor() > 1) {
+            			float lowerYBound = 25 + context.mCamera.getCenterY() - (context.mCamera.getBoundsHeight()/(context.mCamera.getZoomFactor()*2));
+            			float upperYBound = lowerYBound + 315 / context.mCamera.getZoomFactor();
+
+                		Log.w(TAG, "lowerY=" + lowerYBound + ", upperY=" + upperYBound);
+                		if (y < lowerYBound || y > upperYBound) {
+                			tempXPos = -1;
+                			tempYPos = -1;
+                		}
+            		}
             		
             		if (tempXPos >= 0 && tempXPos < 15 && tempYPos >= 0 && tempYPos < 15) {
             			if(context.tileSpaces[tempXPos][tempYPos].letter == '0' && context.tileRack.noOverlaps(pos, tempXPos, tempYPos)) {
