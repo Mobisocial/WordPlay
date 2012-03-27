@@ -22,7 +22,7 @@ public class Tile {
 	Scene scene;
 	boolean inHud;
 	boolean showMe;
-	boolean draggedFromHud;
+	boolean draggedFromHud, dragging;
 	HUD blankTilePicker;
 	
 	private int xPos, yPos;
@@ -32,6 +32,14 @@ public class Tile {
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
                 //3+i*21, 20+j*21
+            	if (pSceneTouchEvent.isActionDown()) {
+            		dragging = true;
+            	}
+            	
+            	if (!dragging) {
+            		return true;
+            	}
+            	
             	float x = pSceneTouchEvent.getX();
             	float y = pSceneTouchEvent.getY();
             	//Log.w("tile", "tile dragged at: " + x + ", " + y);
@@ -56,7 +64,7 @@ public class Tile {
     			
             	if(pSceneTouchEvent.isActionUp()){
             		draggedFromHud = false;
-            		
+            		dragging = false;
             		
             		if (tempXPos >= 0 && tempXPos < 15 && tempYPos >= 0 && tempYPos < 15) {
             			if(context.tileSpaces[tempXPos][tempYPos].letter == '0' && context.tileRack.noOverlaps(pos, tempXPos, tempYPos)) {
@@ -154,6 +162,7 @@ public class Tile {
 		inHud = true;
 		showMe = showme;
 		draggedFromHud = true;
+		dragging = false;
 		
 		xPos = -1;
 		yPos = -1;

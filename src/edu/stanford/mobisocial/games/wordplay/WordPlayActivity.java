@@ -497,10 +497,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         player3Name = new ChangeableText(167, 463, this.nameFont, "USERNAME");
         player4Name = new ChangeableText(247, 463, this.nameFont, "USERNAME");
         
-        player1Score = new ChangeableText(7, 474, this.scoreFont, players[0].getScore() + "");
-        player2Score = new ChangeableText(87, 474, this.scoreFont, players[1].getScore() + "");
-        player3Score = new ChangeableText(167, 474, this.scoreFont, players[2].getScore() + "");
-        player4Score = new ChangeableText(247, 474, this.scoreFont, players[3].getScore() + "");
+        player1Score = new ChangeableText(7, 474, this.scoreFont, players[0].getScore() + "   ");
+        player2Score = new ChangeableText(87, 474, this.scoreFont, players[1].getScore() + "   ");
+        player3Score = new ChangeableText(167, 474, this.scoreFont, players[2].getScore() + "   ");
+        player4Score = new ChangeableText(247, 474, this.scoreFont, players[3].getScore() + "   ");
 
         tileCount = new ChangeableText(183, 413, this.tileCountFont, bag.tilesRemaining() + "") {
             final long LONGPRESS_THRESHOLD = 1500;
