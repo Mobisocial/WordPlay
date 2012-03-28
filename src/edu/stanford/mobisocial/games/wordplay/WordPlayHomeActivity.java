@@ -1,7 +1,13 @@
 package edu.stanford.mobisocial.games.wordplay;
 
+import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.musubi.multiplayer.FeedRenderable;
+import mobisocial.socialkit.musubi.multiplayer.TurnBasedApp;
+
+import org.json.JSONObject;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -17,8 +23,8 @@ import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class HomeActivity extends Activity {
-    private static final String TAG = "WordPlayHome";
+public class WordPlayHomeActivity extends Activity {
+    static final String TAG = "WordPlayHome";
     private Musubi mMusubi;
 
     @Override
@@ -28,7 +34,7 @@ public class HomeActivity extends Activity {
 
         if (!Musubi.isMusubiInstalled(this)) {
             new AlertDialog.Builder(this).setTitle("Install Musubi?")
-                .setMessage("This application lets you connect with friends using the Musubi app" +
+                .setMessage("WordPlay lets you play with friends using the Musubi app" +
             " platform. Would you like to install Musubi now?")
             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                 @Override
@@ -50,8 +56,8 @@ public class HomeActivity extends Activity {
         mMusubi = Musubi.forIntent(this, getIntent());
         String[] projection = null;
         String selection = "type = ?";
-        String[] selectionArgs = new String[] { "app" };
-        String order = null;
+        String[] selectionArgs = new String[] { WordPlayKickoffActivity.TYPE };
+        String order = DbObj.COL_LAST_MODIFIED_TIMESTAMP + " desc";
         Cursor cursor = mMusubi.queryAppData(projection, selection, selectionArgs, order);
 
         ListView lv = (ListView)findViewById(R.id.gamelist);
@@ -68,14 +74,33 @@ public class HomeActivity extends Activity {
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
             DbObj obj = mMusubi.objForCursor(cursor);
+            WordPlayApp app = new WordPlayApp(obj);
+            String[] members = app.getMembers();
+
             TextView tv = (TextView)view;
-            tv.setText("Game #" + (obj.getHash() % 10000));
+            StringBuilder text = new StringBuilder(100)
+                .append("Game #" + Math.abs(obj.getHash() % 1000)).append(": ");
+            for (int i = 0; i < members.length; i++) {
+                DbIdentity id = mMusubi.userForGlobalId(obj.getContainingFeed().getUri(),
+                        members[i]);
+                if (id != null) {
+                    text.append(id.getName()).append(", ");
+                } else {
+                    text.append("???, ");
+                }
+            }
+            text.setLength(text.length() - 2);
+            if (app.isMyTurn()) {
+                text.append(". Your turn.");
+            }
+            tv.setText(text.toString());
             tv.setTag(obj);
         }
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
             TextView tv = new TextView(context);
+            tv.setTextSize(20);
             return tv;
         }
 
@@ -83,10 +108,30 @@ public class HomeActivity extends Activity {
         public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
             DbObj obj = (DbObj)view.getTag();
             Intent game = new Intent(Intent.ACTION_VIEW);
-            game.setClass(HomeActivity.this, WordPlayActivity.class);
+            game.setDataAndType(obj.getUri(), Musubi.mimeTypeFor(obj.getType()));
+            game.setClass(WordPlayHomeActivity.this, WordPlayActivity.class);
             game.putExtra(Musubi.EXTRA_FEED_URI, obj.getContainingFeed().getUri());
-            //game.setDataAndType(obj.getUri(), Musubi.mimeTypeFor("wordplay"));
             startActivity(game);
+        }
+    }
+
+    /**
+     * Stub to work around the fact that WordPlay's TurnBasedApp is not static
+     * and TBA is abstract.
+     */
+    class WordPlayApp extends TurnBasedApp {
+        public WordPlayApp(DbObj objContext) {
+            super(objContext);
+        }
+
+        @Override
+        protected FeedRenderable getFeedView(JSONObject arg0) {
+            return null;
+        }
+
+        @Override
+        protected void onStateUpdate(JSONObject arg0) {
+
         }
     }
 }

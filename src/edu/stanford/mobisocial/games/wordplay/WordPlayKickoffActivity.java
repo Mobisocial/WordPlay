@@ -16,7 +16,7 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 public class WordPlayKickoffActivity extends Activity {
-    final String TYPE = "wordplay";
+    static final String TYPE = "wordplay";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

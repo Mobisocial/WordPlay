@@ -585,7 +585,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         		}
         		if (pSceneTouchEvent.isActionUp()) {
         			this.release();
-        			Intent intent = new Intent(WordPlayActivity.this, HomeActivity.class);
+        			Intent intent = new Intent(WordPlayActivity.this, WordPlayHomeActivity.class);
         			WordPlayActivity.this.startActivity(intent);
         		}
         		return true;
