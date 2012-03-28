@@ -17,6 +17,9 @@ public class LetterValues {
     
 	public static int getLetterValue(String alphabet, char letter) {
 	    letter = Character.toLowerCase(letter);
+	    if (letter == '0') {
+	        return 0;
+	    }
 	    try {
     	    if (!mLetterValueMapCache.containsKey(alphabet)) {
                 HashMap<Character, Integer> map = new HashMap<Character, Integer>();

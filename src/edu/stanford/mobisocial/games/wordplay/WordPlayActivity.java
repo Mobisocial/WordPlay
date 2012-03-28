@@ -55,6 +55,7 @@ import edu.stanford.mobisocial.games.wordplay.tiles.BasicTileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.DoubleLetterTileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.DoubleWordTileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.StartTileSpace;
+import edu.stanford.mobisocial.games.wordplay.tiles.Tile;
 import edu.stanford.mobisocial.games.wordplay.tiles.TileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.TripleLetterTileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.TripleWordTileSpace;
@@ -520,8 +521,13 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                                state.put(OBJ_LAYOUT, jsonForBoardLayout(BoardLayout.classicBoard));
                                state.put(OBJ_LETTER_VALUES, alphabet);
                                mMultiplayer.takeTurn(me, state);
-                               tileRack.fromJson(scene, alphabet, state.optJSONArray(OBJ_RACKS)
+                               TileRack newRack = new TileRack(WordPlayActivity.this, false);
+                               newRack.fromJson(scene, alphabet, state.optJSONArray(OBJ_RACKS)
                                        .optJSONArray(mMultiplayer.getLocalMemberIndex()));
+                               for (int i = 0; i < newRack.numTiles; i++) {
+                                   Tile t = newRack.tiles[i];
+                                   tileRack.replaceTile(scene, t.getLetter(), t.getPoints(), i);
+                               }
                                render();
                                Toast.makeText(WordPlayActivity.this, "Classicist", Toast.LENGTH_SHORT).show();
                            } catch (JSONException e) {
@@ -1258,17 +1264,19 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         @Override
         protected FeedRenderable getFeedView(JSONObject arg0) {
             StringBuilder html = new StringBuilder("<html><head>");
-            html.append("<body style=\"width:250px\">");
-            html.append("<span style=\"font-weight:bold;\">WordPlay Scoreboard</span>");
+            html.append("<body style=\"width:200px\">");
+            html.append("<div style=\"font-weight:bold;\">WordPlay Scoreboard</div>");
             html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
             html.append("<table>");
             for (int i = 0; i < numPlayers; i++) {
+                String color;
                 if ((getGlobalMemberCursor())%numPlayers == i) {
-                    html.append("<tr><td><span style=\"font-weight:bold; color: #FF752B;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+                    color = "#FF752B";
+                } else {
+                    color = "#ffffff";
                 }
-                else {
-                    html.append("<tr><td><span style=\"font-weight:bold; color: #ffffff;\">").append(players[i].getShortName()).append("</span></td><td><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
-                }
+                html.append("<tr><td width=\"80%\"><span style=\"font-weight:bold; color:").append(color).append("\">").append(players[i].getShortName()).append("</span></td>")
+                    .append("<td width=\"20%\"><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
             }
             html.append("</table>");
             html.append("</div>").append(lastMove).append("<div style=\"text-align: right;\">");
