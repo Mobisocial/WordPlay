@@ -4,9 +4,7 @@ import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
 
-import android.util.Log;
 import edu.stanford.mobisocial.games.wordplay.WordPlayActivity;
-import edu.stanford.mobisocial.games.wordplay.constants.LetterValues;
 
 public abstract class TileSpace {
 	protected int x, y;
@@ -15,7 +13,8 @@ public abstract class TileSpace {
 	protected int wordModifier;
 	protected Sprite tile, letterTile, overlay;
 	protected char letter;
-	
+	protected int letterValue;
+
 	public TileSpace(int x, int y) {
 		this.x = x;
 		this.y = y;
@@ -37,7 +36,7 @@ public abstract class TileSpace {
 			return 0;
 		}
 		else {
-			return tileModifier*LetterValues.getLetterValue(letter);
+			return tileModifier*letterValue;
 		}
 	}
 	
@@ -45,9 +44,9 @@ public abstract class TileSpace {
 		return wordModifier;
 	}
 	
-	public void setLetter(char letter) {
-
-		TileSpace.this.letter = letter;
+	public synchronized void setLetter(char letter, int letterValue) {
+		this.letter = letter;
+		this.letterValue = letterValue;
 	}
 	
 	public void finalizeLetter(final WordPlayActivity context, final Scene scene) {

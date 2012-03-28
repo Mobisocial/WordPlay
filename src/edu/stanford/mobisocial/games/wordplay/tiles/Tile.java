@@ -8,7 +8,6 @@ import org.anddev.andengine.input.touch.TouchEvent;
 import android.graphics.Point;
 import android.util.Log;
 import edu.stanford.mobisocial.games.wordplay.WordPlayActivity;
-import edu.stanford.mobisocial.games.wordplay.constants.LetterValues;
 
 public class Tile {
 	public static final String TAG = "tile";
@@ -161,10 +160,10 @@ public class Tile {
         };
 	}
 	
-	public Tile(final WordPlayActivity context, final Scene scene, char letter, int i, boolean showme) {
+	public Tile(final WordPlayActivity context, final Scene scene, char letter, int points, int i, boolean showme) {
 		//Log.w("tile", "creating tile " + letter);
 		this.letter = letter;
-		this.points = LetterValues.getLetterValue(letter);
+		this.points = points;
 		this.context = context;
 		this.scene = scene;
 		pos = i;
@@ -279,7 +278,7 @@ public class Tile {
 			return letter;
 		}
 	}
-	
+
 	public void setPos(int i) {
 		if(!showMe) { return; }
 		pos = i;
