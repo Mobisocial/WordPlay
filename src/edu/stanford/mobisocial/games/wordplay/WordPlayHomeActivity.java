@@ -100,7 +100,7 @@ public class WordPlayHomeActivity extends Activity {
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
             TextView tv = new TextView(context);
-            tv.setTextSize(20);
+            tv.setTextSize(24);
             return tv;
         }
 
