@@ -49,6 +49,7 @@ import android.view.Window;
 import android.widget.Toast;
 import edu.stanford.mobisocial.games.wordplay.buttons.Button;
 import edu.stanford.mobisocial.games.wordplay.constants.BoardLayout;
+import edu.stanford.mobisocial.games.wordplay.constants.LetterValues;
 import edu.stanford.mobisocial.games.wordplay.players.Player;
 import edu.stanford.mobisocial.games.wordplay.tiles.BasicTileSpace;
 import edu.stanford.mobisocial.games.wordplay.tiles.DoubleLetterTileSpace;
@@ -137,6 +138,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	Button playButton, clearButton, shuffleButton, swapButton, passButton, homeButton;
 
 	static final String OBJ_LAYOUT = "layout";
+	static final String OBJ_LETTER_VALUES = "tvalues";
 	static final String OBJ_BOARD_STATE = "board";
     static final String OBJ_BAG = "bag";
     static final String OBJ_RACKS = "racks";
@@ -476,7 +478,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         // TODO: this device may have multiple owned identities-- this could even support a localplay game.
         JSONObject state = mMultiplayer.getLatestState();
         bag = new TileBag();
-        bag.fromJson(mMultiplayer.getLatestState().optJSONArray(OBJ_BAG));
+        bag.fromJson(state.optJSONArray(OBJ_BAG));
 
 		this.mScrollDetector = new SurfaceScrollDetector(this);
 		this.mScrollDetector.setEnabled(true);
@@ -512,14 +514,18 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                    if (lastDown != null && up - lastDown > LONGPRESS_THRESHOLD) {
                        if (mMultiplayer.isMyTurn()) {
                            try {
-                               JSONObject state = mMultiplayer.getLatestState();
+                               String alphabet = LetterValues.classicLetterValues;
                                int me = mMultiplayer.getGlobalMemberCursor();
-                               state.put(OBJ_LAYOUT, layoutForBoard(BoardLayout.classicBoard));
-                               Toast.makeText(WordPlayActivity.this, "Classicist", Toast.LENGTH_SHORT).show();
+                               JSONObject state = getInitialState(mMultiplayer.getMembers().length);
+                               state.put(OBJ_LAYOUT, jsonForBoardLayout(BoardLayout.classicBoard));
+                               state.put(OBJ_LETTER_VALUES, alphabet);
                                mMultiplayer.takeTurn(me, state);
+                               tileRack.fromJson(scene, alphabet, state.optJSONArray(OBJ_RACKS)
+                                       .optJSONArray(mMultiplayer.getLocalMemberIndex()));
                                render();
+                               Toast.makeText(WordPlayActivity.this, "Classicist", Toast.LENGTH_SHORT).show();
                            } catch (JSONException e) {
-                               Toast.makeText(WordPlayActivity.this, "Failed to load board", Toast.LENGTH_SHORT).show();
+                               Toast.makeText(WordPlayActivity.this, "Bad luck", Toast.LENGTH_SHORT).show();
                            }
                        }
                    }
@@ -561,7 +567,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         hud.attachChild(tileCount);
         hud.registerTouchArea(tileCount);
 
-        tileRack.fromJson(scene, state.optJSONArray(OBJ_RACKS).optJSONArray(mMultiplayer.getLocalMemberIndex()));
+        String alphabet = getAlphabet(state);
+        tileRack.fromJson(scene, alphabet, 
+                state.optJSONArray(OBJ_RACKS).optJSONArray(mMultiplayer.getLocalMemberIndex()));
 
 		homeButton = new Button(8, 1, homeButtonRegion){
             @Override
@@ -619,8 +627,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         					boardRep[wordCoordinates[i].x][wordCoordinates[i].y] = wordCoordinates[i].letter; 
         					tileSpaces[wordCoordinates[i].x][wordCoordinates[i].y].setUsed();
         				}
+        				String alphabet = getAlphabet(mMultiplayer.getLatestState());
         				while(tileRack.numTiles < TILES_PER_RACK && bag.tilesRemaining() > 0) {
-        					tileRack.addTile(scene, bag.getNextTile());
+        				    char tile = bag.getNextTile();
+        					tileRack.addTile(scene, tile, LetterValues.getLetterValue(alphabet, tile));
         				}
         				players[mMultiplayer.getLocalMemberIndex()].incrementScore(totalPoints);
     					player1Score.setText(players[0].getScore() + "");
@@ -772,11 +782,13 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         	        			}
         	        			
         	        			if (numTiles > 0) {
+        	        			    String alphabet = getAlphabet(mMultiplayer.getLatestState());
         	        				Character[] newTiles = bag.swapTiles(swapTiles);
         	        				j = 0;
         	        				for (int i = 0; i < 7; i++) {
         	        					if (selection[i]) {
-        	        						tileRack.replaceTile(scene, newTiles[j], i);
+        	        					    char letter = newTiles[j];
+        	        						tileRack.replaceTile(scene, letter, LetterValues.getLetterValue(alphabet, letter), i);
         	        						j++;
         	        					}
         	        				}
@@ -916,7 +928,15 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		return scene;
 	}
 
-	@Override
+	private String getAlphabet(JSONObject state) {
+	    String alphabet = state.optString(OBJ_LETTER_VALUES);
+        if (alphabet == null || alphabet.length() == 0) {
+            alphabet = LetterValues.letterValues;
+        }
+        return alphabet;
+    }
+
+    @Override
 	public void onLoadComplete() {
 		if (!Musubi.isMusubiInstalled(getApplicationContext())) {
 			// TODO: this is never seen because the activity can't be launched without Musubi.
@@ -1295,7 +1315,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 int j = 0;
                 for(int i = 0; i < numPlayers; i++) {
                     if (i != getLocalMemberIndex()) {
-                        opponentRacks[j].fromJson(scene, oldRacks.getJSONArray(i));
+                        opponentRacks[j].fromJson(scene, getAlphabet(state), oldRacks.getJSONArray(i));
                         j++;
                     }
                 }
@@ -1406,7 +1426,11 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         passCount = message.optInt("passcount");
 
         // board layout
-        renderBoardLayout(mMultiplayer.getLatestState().optJSONArray(OBJ_LAYOUT));
+        JSONArray arr = mMultiplayer.getLatestState().optJSONArray(OBJ_LAYOUT);
+        if (arr == null) {
+            arr = jsonForBoardLayout(BoardLayout.board);
+        }
+        renderBoardLayout(arr);
 
         // game state
         JSONArray board = message.optJSONArray(OBJ_BOARD_STATE);
@@ -1415,7 +1439,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         	for (int j = 0; j < BOARD_SIZE; j++) {
         		char c = row.optString(j).charAt(0);
         		boardRep[i][j] = c;
-        		tileSpaces[i][j].setLetter(c);
+        		tileSpaces[i][j].setLetter(c, LetterValues.getLetterValue(getAlphabet(message), c));
         		if (c != '0') {
         			tileSpaces[i][j].setUsed();
             		tileSpaces[i][j].finalizeLetter(WordPlayActivity.this, scene);
@@ -1593,8 +1617,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 racks.put(rack);
             }
 
-            state.put(OBJ_LAYOUT, layoutForBoard(BoardLayout.board));
+            state.put(OBJ_LAYOUT, jsonForBoardLayout(BoardLayout.board));
             state.put(OBJ_BOARD_STATE, board);
+            state.put(OBJ_LETTER_VALUES, LetterValues.letterValues);
             state.put(OBJ_BAG, bag.toJson());
             state.put(OBJ_RACKS, racks);
             state.put(OBJ_SCORES, scores);
@@ -1605,7 +1630,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
     }
 
-    static JSONArray layoutForBoard(String[][] board) {
+    static JSONArray jsonForBoardLayout(String[][] board) {
         JSONArray layout = new JSONArray();
         for (int i = 0; i < BOARD_SIZE; i++) {
             JSONArray row = new JSONArray();

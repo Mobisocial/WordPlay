@@ -9,6 +9,7 @@ import org.json.JSONException;
 
 import android.graphics.Point;
 import android.util.Log;
+import edu.stanford.mobisocial.games.wordplay.constants.LetterValues;
 import edu.stanford.mobisocial.games.wordplay.tiles.Tile;
 
 public class TileRack {
@@ -42,7 +43,7 @@ public class TileRack {
 		return tilesJson;
 	}
 	
-	public void fromJson(Scene scene, JSONArray tilesJson) {
+	public void fromJson(Scene scene, String alphabet, JSONArray tilesJson) {
 	    clearTiles();
 		try {
 			for (int i = 0; i < 7; i++) {
@@ -56,7 +57,8 @@ public class TileRack {
 				if(tilesJson == null) { /*Log.w("tilerack", "WTF: " + tilesJson.toString());*/}
 				if (!tilesJson.getString(i).equals("?")) {
 					//Log.w("tilerack", "inserting " + tilesJson.getString(i).charAt(0));
-					this.addTile(scene, tilesJson.getString(i).charAt(0));
+				    char letter = tilesJson.getString(i).charAt(0);
+					this.addTile(scene, letter, LetterValues.getLetterValue(alphabet, letter));
 					//this.insertTileAtPos(scene, new Tile(context, scene, tilesJson.getString(i).charAt(0), i, showMe), i);
 				}
 			} 
@@ -290,7 +292,7 @@ public class TileRack {
 			if (tiles[i] != null) {
 				Point coordinates = tiles[i].getCoordinates();
 				if (coordinates != null) {
-					context.tileSpaces[coordinates.x][coordinates.y].setLetter(tiles[i].getLetter());
+					context.tileSpaces[coordinates.x][coordinates.y].setLetter(tiles[i].getLetter(), tiles[i].getPoints());
 					context.tileSpaces[coordinates.x][coordinates.y].setPoints(tiles[i].getPoints());
 					//tiles[i].finalizeTile();
 					//tiles[i] = null;
@@ -359,16 +361,16 @@ public class TileRack {
 		}
 	}
 	
-	public void replaceTile(Scene scene, char letter, int pos) {
+	public void replaceTile(Scene scene, char letter, int value, int pos) {
 		tiles[pos].removeTile();
-		tiles[pos] = new Tile(context, scene, letter, pos, showMe);
+		tiles[pos] = new Tile(context, scene, letter, value, pos, showMe);
 	}
 	
-	public void addTile(Scene scene, char letter) {
+	public void addTile(Scene scene, char letter, int value) {
 		int i = freePos();
 		
 		if (i >= 0 && i < 7) {
-			tiles[i] = new Tile(context, scene, letter, i, showMe);
+			tiles[i] = new Tile(context, scene, letter, value, i, showMe);
 			numTiles++;
 		}
 	}

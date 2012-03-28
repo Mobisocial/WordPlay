@@ -23,18 +23,17 @@ public class WordPlayKickoffActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         Musubi m = Musubi.forIntent(this, getIntent());
-        List<DbIdentity> members = m.getFeed().getMembers();
-        if (members.size() > 4) {
-            members = members.subList(0, 4);
+        List<DbIdentity> players = m.getFeed().getMembers();
+        if (players.size() > 4) {
+            players = players.subList(0, 4);
         }
-        JSONObject initialState = WordPlayActivity.getInitialState(members.size());
-        if (members.size() < 2) {
+        JSONObject initialState = WordPlayActivity.getInitialState(players.size());
+        if (players.size() < 2) {
             Toast.makeText(this, "Not enough players for WordPlay", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
-
-        List<DbIdentity> players = members.subList(0, 2);        
+      
         Obj game = TurnBasedApp.newInstance(TYPE, players, initialState);
         Uri objUri = m.getFeed().insert(game);
         Intent view = new Intent(Intent.ACTION_VIEW);
