@@ -996,6 +996,8 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 			//player4Score.setColor(1f, .647f, .341f);
 			player4ScorePlate.setCurrentTileIndex(1);
         }
+		
+		numPlayers = mMultiplayer.getMembers().length;
 
 		if(numPlayers < 4) {
 			player4Name.setText("");
@@ -1008,6 +1010,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             });
 		}
 		if(numPlayers < 3) {
+			Log.w(TAG, "detaching player3scoreplate");
 			player3Name.setText("");
 			player3Score.setText("");
 			runOnUpdateThread(new Runnable() {
@@ -1268,7 +1271,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         private JSONObject getApplicationState() {
             JSONObject state = getLatestState() == null ? new JSONObject() : getLatestState();
             numPlayers = getMembers().length;
-            
             try {
                 state.put("passcount", passCount);
                 state.put("gameover", gameOver);
@@ -1402,6 +1404,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     	JSONObject message = mMultiplayer.getLatestState();
     	Log.w(TAG, "rendering normal state " + mMultiplayer.getLatestState());
         numPlayers = mMultiplayer.getMembers().length;
+
         gameOver = message.optBoolean("gameover");
         passCount = message.optInt("passcount");
 

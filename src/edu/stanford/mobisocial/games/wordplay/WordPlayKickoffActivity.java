@@ -34,8 +34,8 @@ public class WordPlayKickoffActivity extends Activity {
             return;
         }
 
-        List<DbIdentity> players = members.subList(0, 2);        
-        Obj game = TurnBasedApp.newInstance(TYPE, players, initialState);
+        //List<DbIdentity> players = members.subList(0, 2);        
+        Obj game = TurnBasedApp.newInstance(TYPE, members, initialState);
         Uri objUri = m.getFeed().insert(game);
         Intent view = new Intent(Intent.ACTION_VIEW);
         view.setDataAndType(objUri, Musubi.mimeTypeFor(TYPE));
