@@ -1429,12 +1429,12 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     }
 
     private void render() {
-    	JSONObject message = mMultiplayer.getLatestState();
+    	JSONObject state = mMultiplayer.getLatestState();
     	Log.w(TAG, "rendering normal state " + mMultiplayer.getLatestState());
         numPlayers = mMultiplayer.getMembers().length;
 
-        gameOver = message.optBoolean("gameover");
-        passCount = message.optInt("passcount");
+        gameOver = state.optBoolean("gameover");
+        passCount = state.optInt("passcount");
 
         // board layout
         JSONArray arr = mMultiplayer.getLatestState().optJSONArray(OBJ_LAYOUT);
@@ -1443,14 +1443,17 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
         renderBoardLayout(arr);
 
+        // brand new bag
+        bag.fromJson(state.optJSONArray(OBJ_BAG));
+
         // game state
-        JSONArray board = message.optJSONArray(OBJ_BOARD_STATE);
+        JSONArray board = state.optJSONArray(OBJ_BOARD_STATE);
         for (int i = 0; i < BOARD_SIZE; i++) {
         	JSONArray row = board.optJSONArray(i);
         	for (int j = 0; j < BOARD_SIZE; j++) {
         		char c = row.optString(j).charAt(0);
         		boardRep[i][j] = c;
-        		tileSpaces[i][j].setLetter(c, LetterValues.getLetterValue(getAlphabet(message), c));
+        		tileSpaces[i][j].setLetter(c, LetterValues.getLetterValue(getAlphabet(state), c));
         		if (c != '0') {
         			tileSpaces[i][j].setUsed();
             		tileSpaces[i][j].finalizeLetter(WordPlayActivity.this, scene);
@@ -1460,10 +1463,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
         // scores
         for(int i = 0; i < numPlayers; i++) {
-            players[i].setScore(message.optJSONArray(OBJ_SCORES).optInt(i));
+            players[i].setScore(state.optJSONArray(OBJ_SCORES).optInt(i));
         }
 
-        lastMove = message.optString("lastmove");
+        lastMove = state.optString("lastmove");
         titleText.setText(lastMove);
 		player1Score.setText(""+players[0].getScore());
 		player2Score.setText(""+players[1].getScore());
