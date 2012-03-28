@@ -6,12 +6,12 @@ import edu.stanford.mobisocial.games.wordplay.WordPlayActivity;
 
 public class StartTileSpace extends TileSpace{
 	
-	public StartTileSpace(WordPlayActivity context, int x, int y) {
+	public StartTileSpace(WordPlayActivity context, int x, int y, int wordModifier) {
 		super(x, y);
 		tile = new Sprite(x, y, context.startTileRegion);
 		
 		tileModifier = 1;
-		wordModifier = 1;
+		this.wordModifier = wordModifier;
 	}
 
 }
