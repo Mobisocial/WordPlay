@@ -1583,7 +1583,11 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                     tileSpaces[i][j] = new TripleWordTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
                 }
                 else if (square.equals("ST")) {
-                    tileSpaces[i][j] = new StartTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21);
+                    tileSpaces[i][j] = new StartTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21, 1);
+                    startCoordinate = new Point(i, j);
+                }
+                else if (square.equals("S2")) {
+                    tileSpaces[i][j] = new StartTileSpace(this, OFFSET_X+i*21, OFFSET_Y+j*21, 2);
                     startCoordinate = new Point(i, j);
                 }
                 else {

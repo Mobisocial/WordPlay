@@ -30,7 +30,7 @@ public class BoardLayout {
 
         {"NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA"},
         {"NA","NA","DL","NA","NA","NA","DL","NA","DL","NA","NA","NA","DL","NA","NA"},
-        {"TW","NA","NA","DL","NA","NA","NA","ST","NA","NA","NA","DL","NA","NA","TW"},
+        {"TW","NA","NA","DL","NA","NA","NA","S2","NA","NA","NA","DL","NA","NA","TW"},
         {"NA","NA","DL","NA","NA","NA","DL","NA","DL","NA","NA","NA","DL","NA","NA"},
         {"NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA","NA","NA","TL","NA"},
 
