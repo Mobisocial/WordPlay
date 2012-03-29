@@ -577,7 +577,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         tileRack.fromJson(scene, alphabet, 
                 state.optJSONArray(OBJ_RACKS).optJSONArray(mMultiplayer.getLocalMemberIndex()));
 
-		homeButton = new Button(8, 1, homeButtonRegion){
+		homeButton = new Button(6, 0, homeButtonRegion){
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
         		if (pSceneTouchEvent.isActionDown()) {
