@@ -9,6 +9,8 @@ public class TripleLetterTileSpace extends TileSpace{
 	public TripleLetterTileSpace(WordPlayActivity context, int x, int y) {
 		super(x, y);
 		tile = new Sprite(x, y, context.tripleLetterTileRegion);
+		tile.setWidth(21);
+		tile.setHeight(21);
 		
 		tileModifier = 3;
 		wordModifier = 1;

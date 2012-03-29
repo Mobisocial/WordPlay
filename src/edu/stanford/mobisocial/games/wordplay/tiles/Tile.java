@@ -65,18 +65,15 @@ public class Tile {
             		draggedFromHud = false;
             		dragging = false;
             		
-            		Log.w(TAG, "x=" + x + ", y=" + y);
             		if (context.mCamera.getZoomFactor() > 1) {
             			float lowerYBound = 25 + context.mCamera.getCenterY() - (context.mCamera.getBoundsHeight()/(context.mCamera.getZoomFactor()*2));
             			float upperYBound = lowerYBound + 315 / context.mCamera.getZoomFactor();
 
-                		Log.w(TAG, "lowerY=" + lowerYBound + ", upperY=" + upperYBound);
                 		if (y < lowerYBound || y > upperYBound) {
                 			tempXPos = -1;
                 			tempYPos = -1;
                 		}
             		}
-            		
             		if (tempXPos >= 0 && tempXPos < 15 && tempYPos >= 0 && tempYPos < 15) {
             			if(context.tileSpaces[tempXPos][tempYPos].letter == '0' && context.tileRack.noOverlaps(pos, tempXPos, tempYPos)) {
 	                        

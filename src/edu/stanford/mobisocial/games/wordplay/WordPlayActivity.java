@@ -211,12 +211,12 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		this.mEngine.getTextureManager().loadTexture(this.mTexture);
 		
 
-		this.startTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.baseTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.doubleLetterTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.tripleLetterTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.doubleWordTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		this.tripleWordTile = new BitmapTextureAtlas(32, 32, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.startTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.baseTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.doubleLetterTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.tripleLetterTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.doubleWordTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		this.tripleWordTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
 
 		
 		this.aTile = new BitmapTextureAtlas(64, 64, TextureOptions.BILINEAR_PREMULTIPLYALPHA);
@@ -470,7 +470,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	@Override
 	public Scene onLoadScene() {
 	    scene = new Scene();
-	    scene.setBackground(new ColorBackground(1f, 1f, 1f));
+	    float r = 74f/255f;
+	    float g = 36f/255f;
+	    float b = 22f/255f;
+	    scene.setBackground(new ColorBackground(r, g, b));
         scene.setOnAreaTouchTraversalFrontToBack();
 
 	    mMusubi = Musubi.forIntent(this, getIntent());

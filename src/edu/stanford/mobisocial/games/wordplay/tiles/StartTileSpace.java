@@ -9,6 +9,8 @@ public class StartTileSpace extends TileSpace{
 	public StartTileSpace(WordPlayActivity context, int x, int y, int wordModifier) {
 		super(x, y);
 		tile = new Sprite(x, y, context.startTileRegion);
+		tile.setWidth(21);
+		tile.setHeight(21);
 		
 		tileModifier = 1;
 		this.wordModifier = wordModifier;
