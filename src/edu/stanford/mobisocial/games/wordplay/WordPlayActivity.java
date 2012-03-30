@@ -1354,13 +1354,11 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 tileCount.setText(bag.tilesRemaining() + "");
                 state.put(OBJ_BAG, bag.toJson());
                 
-                j = 0;
                 for(int i = 0; i < numPlayers; i++) {
                     if (i == getLocalMemberIndex()) {
                         racks.put(tileRack.toJson());
-                    }
-                    else {
-                        racks.put(opponentRacks[j].toJson());
+                    } else {
+                        racks.put(opponentRacks[i].toJson());
                     }
                 }
                 state.put(OBJ_RACKS, racks);
