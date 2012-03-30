@@ -74,6 +74,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	public final static int OFFSET_Y = 40;
 	 
 	private static final String TAG = "WordPlayActivity";
+	private static final boolean DBG = false;
 	// ===========================================================
 	// Fields
 	// ===========================================================
@@ -1450,7 +1451,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
     private void render() {
     	JSONObject state = mMultiplayer.getLatestState();
-    	Log.w(TAG, "rendering normal state " + mMultiplayer.getLatestState());
+    	if (DBG) Log.w(TAG, "rendering normal state " + mMultiplayer.getLatestState());
         numPlayers = mMultiplayer.getMembers().length;
 
         gameOver = state.optBoolean("gameover");
