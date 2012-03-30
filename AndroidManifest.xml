@@ -35,5 +35,11 @@
                 <data android:mimeType="vnd.musubi.obj/wordplay"/>
             </intent-filter>
         </activity>
+        
+		<receiver android:name=".NotificationReceiver">
+		    <intent-filter>
+		        <action android:name="mobisocial.intent.action.DATA_RECEIVED"/>
+		    </intent-filter>
+		</receiver>
     </application>
 </manifest>

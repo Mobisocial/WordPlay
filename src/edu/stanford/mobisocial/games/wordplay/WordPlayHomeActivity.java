@@ -7,9 +7,12 @@ import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
-import mobisocial.socialkit.musubi.multiplayer.FeedRenderable;
+import mobisocial.socialkit.musubi.Musubi.DbThing;
+import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 import mobisocial.socialkit.musubi.multiplayer.TurnBasedApp;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -18,8 +21,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -35,7 +40,7 @@ public class WordPlayHomeActivity extends Activity {
     private Musubi mMusubi;
     static final String ACTION_CREATE_FEED = "musubi.intent.action.CREATE_FEED";
     static final int REQUEST_CREATE_FEED = 1;
-
+    static String[] sGameProjection = new String[] { DbObj.COL_ID, DbObj.COL_FEED_ID };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,11 +49,10 @@ public class WordPlayHomeActivity extends Activity {
         findViewById(R.id.new_game).setOnClickListener(mNewGameListener);
         if (Musubi.isMusubiInstalled(this)) {
             mMusubi = Musubi.forIntent(this, getIntent());
-            String[] projection = null;
             String selection = "type = ?";
             String[] selectionArgs = new String[] { WordPlayKickoffActivity.TYPE };
             String order = DbObj.COL_LAST_MODIFIED_TIMESTAMP + " desc";
-            Cursor cursor = mMusubi.queryAppData(projection, selection, selectionArgs, order);
+            Cursor cursor = mMusubi.queryAppData(sGameProjection, selection, selectionArgs, order);
     
             ListView lv = (ListView)findViewById(R.id.gamelist);
             GameSummaryAdapter gsa = new GameSummaryAdapter(this, cursor);
@@ -78,7 +82,6 @@ public class WordPlayHomeActivity extends Activity {
                 Intent view = new Intent(Intent.ACTION_VIEW);
                 view.setDataAndType(objUri, Musubi.mimeTypeFor(game.getType()));
                 startActivity(view);
-                finish();
             }
         }
     };
@@ -119,16 +122,38 @@ public class WordPlayHomeActivity extends Activity {
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
-            DbObj obj = mMusubi.objForCursor(cursor);
-            WordPlayApp app = new WordPlayApp(obj);
-            String[] members = app.getMembers();
+            long localId = cursor.getLong(0);
+            Uri feedUri = Musubi.uriForItem(DbThing.FEED, cursor.getLong(1));
+
+            JSONObject json;
+            try {
+                json = getLatestState(localId);
+                if (json == null) {
+                    Log.w(TAG, "no state for " + localId);
+                    json = new JSONObject();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "couldnt get game " + localId);
+                return;
+            }
+
+            JSONArray members = json.optJSONArray(Multiplayer.OBJ_MEMBERSHIP);
+            int turn = json.optInt("member_cursor");
+            if (members == null || turn >= members.length()) {
+                Log.w(TAG, "couldnt render " + localId);
+                return;
+            }
+            String gameName = "#" + localId;
+
+            DbIdentity potential = mMusubi.userForGlobalId(feedUri, members.optString(turn));
+            boolean myTurn = potential.isOwned();
+            //Log.d(TAG, "turn " + turn + " is " + myTurn + ", " + json);
 
             TextView tv = (TextView)view;
             StringBuilder text = new StringBuilder(100)
-                .append("Game #" + Math.abs(obj.getHash() % 1000)).append(": ");
-            for (int i = 0; i < members.length; i++) {
-                DbIdentity id = mMusubi.userForGlobalId(obj.getContainingFeed().getUri(),
-                        members[i]);
+                .append("Game ").append(gameName).append(": ");
+            for (int i = 0; i < members.length(); i++) {
+                DbIdentity id = mMusubi.userForGlobalId(feedUri, members.optString(i));
                 if (id != null) {
                     text.append(id.getName()).append(", ");
                 } else {
@@ -136,11 +161,14 @@ public class WordPlayHomeActivity extends Activity {
                 }
             }
             text.setLength(text.length() - 2);
-            if (app.isMyTurn()) {
+            if (myTurn) {
+                tv.setBackgroundColor(0xff666666);
                 text.append(". Your turn.");
+            } else {
+                tv.setBackgroundColor(Color.TRANSPARENT);
             }
             tv.setText(text.toString());
-            tv.setTag(obj);
+            tv.setTag(localId);
         }
 
         @Override
@@ -152,32 +180,36 @@ public class WordPlayHomeActivity extends Activity {
 
         @Override
         public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
-            DbObj obj = (DbObj)view.getTag();
+            Uri objUri = Musubi.uriForItem(DbThing.OBJECT, (Long)view.getTag());
             Intent game = new Intent(Intent.ACTION_VIEW);
-            game.setDataAndType(obj.getUri(), Musubi.mimeTypeFor(obj.getType()));
+            game.setDataAndType(objUri, Musubi.mimeTypeFor(WordPlayKickoffActivity.TYPE));
             game.setClass(WordPlayHomeActivity.this, WordPlayActivity.class);
-            game.putExtra(Musubi.EXTRA_FEED_URI, obj.getContainingFeed().getUri());
             startActivity(game);
         }
     }
 
-    /**
-     * Stub to work around the fact that WordPlay's TurnBasedApp is not static
-     * and TBA is abstract.
-     */
-    class WordPlayApp extends TurnBasedApp {
-        public WordPlayApp(DbObj objContext) {
-            super(objContext);
-        }
-
-        @Override
-        protected FeedRenderable getFeedView(JSONObject arg0) {
-            return null;
-        }
-
-        @Override
-        protected void onStateUpdate(JSONObject arg0) {
-
+    JSONObject getLatestState(long localId) throws JSONException {
+        Uri uri = Musubi.uriForDir(DbThing.OBJECT);
+        String[] projection = new String[] { DbObj.COL_JSON };
+        String selection = DbObj.COL_PARENT_ID + "=? and type='appstate'";
+        String[] selectionArgs = new String[] { Long.toString(localId) };
+        String sortOrder = DbObj.COL_INT_KEY + " desc limit 1";
+        Cursor c = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+        try {
+            if (c.moveToFirst()) {
+                return new JSONObject(c.getString(0));
+            } else {
+                c.close();
+                selection = DbObj.COL_ID + "=?";
+                c = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+                if (c.moveToFirst()) {
+                    return new JSONObject(c.getString(0));
+                } else {
+                    return null;
+                }
+            }
+        } finally {
+            c.close();
         }
     }
 }
