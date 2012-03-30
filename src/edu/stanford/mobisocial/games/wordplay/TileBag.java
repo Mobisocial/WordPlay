@@ -5,7 +5,10 @@ import java.util.Collections;
 
 import org.json.JSONArray;
 
+import android.util.Log;
+
 public class TileBag {
+	public static final String TAG = "TileBag";
 	private Character bag[];
 	
 	public TileBag() {
@@ -54,6 +57,9 @@ public class TileBag {
 		Character[] original = bag;
 		bag = new Character[original.length - 1];
 		System.arraycopy(original, 1, bag, 0, bag.length);
+
+		Log.w(TAG, Arrays.toString(original));
+		Log.w(TAG, Arrays.toString(bag));
 		
 		return tile;
 	}
