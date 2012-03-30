@@ -1286,11 +1286,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
         @Override
         protected FeedRenderable getFeedView(JSONObject arg0) {
-            StringBuilder html = new StringBuilder("<html><head>");
+            StringBuilder html = new StringBuilder("<html>");
             html.append("<body style=\"width:200px\">");
-            html.append("<div style=\"font-weight:bold;\">WordPlay Scoreboard</div>");
+            html.append("<div style=\"font-weight:bold; text-align: center;\">Scoreboard</div>");
             html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
-            html.append("<table>");
             for (int i = 0; i < numPlayers; i++) {
                 String color;
                 if ((getGlobalMemberCursor())%numPlayers == i) {
@@ -1298,15 +1297,16 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 } else {
                     color = "#ffffff";
                 }
-                html.append("<tr><td width=\"80%\"><span style=\"font-weight:bold; color:").append(color).append("\">").append(players[i].getShortName()).append("</span></td>")
-                    .append("<td width=\"20%\"><span style=\"color: #ffffff;\">").append(players[i].getScore()).append(" pts</span></td></tr>");
+                html.append("<div style=\"width: 100px; margin-left: 10px; float: left; text-align: left; font-weight:bold; color:").append(color).append("\">").append(players[i].getShortName()).append("</div>")
+                    .append("<div style=\"width: 50px; margin-left: 10px; float: right; color: #ffffff; text-align: right;\">").append(players[i].getScore()).append(" pts</div>")
+                    .append("<div style=\"clear: both;\"></div>");
             }
-            html.append("</table>");
-            html.append("</div>").append(lastMove).append("<div style=\"text-align: right;\">");
+            html.append("</div><div style=\"text-align: center;\">").append(lastMove).append("</div><div style=\"text-align: center;\">");
             html.append(bag.tilesRemaining()).append(" tiles remaining");
             html.append("</div></body>");
 
             html.append("</html>");
+            Log.w(TAG, html.toString());
             return FeedRenderable.fromHtml(html.toString());
         }
 
