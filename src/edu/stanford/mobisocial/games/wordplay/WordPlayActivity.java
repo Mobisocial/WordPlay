@@ -478,6 +478,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
 	    mMusubi = Musubi.forIntent(this, getIntent());
         mMultiplayer = new WordPlayMultiplayer(mMusubi.getObj());
+        mMultiplayer.enableStateUpdates();
 
         // TODO: this device may have multiple owned identities-- this could even support a localplay game.
         JSONObject state = mMultiplayer.getLatestState();
@@ -944,6 +945,22 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
         return alphabet;
     }
+
+	@Override
+	protected void onResume() {
+	    super.onResume();
+	    if (mMultiplayer != null) {
+	        mMultiplayer.enableStateUpdates();
+	    }
+	}
+
+	@Override
+	protected void onPause() {
+	    super.onPause();
+	    if (mMultiplayer != null) {
+	        mMultiplayer.disableStateUpdates();
+	    }
+	}
 
     @Override
 	public void onLoadComplete() {
