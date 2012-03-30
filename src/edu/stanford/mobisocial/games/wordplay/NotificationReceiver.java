@@ -28,6 +28,8 @@ public class NotificationReceiver extends BroadcastReceiver {
         }
         NotificationManager nm = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = new Notification(R.drawable.notification, "Move made in WordPlay", System.currentTimeMillis());
+        notification.flags = Notification.FLAG_AUTO_CANCEL;
+
         Intent notificationIntent = new Intent(context, WordPlayActivity.class);
         notificationIntent.setData(objUri);
         PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, 0);
