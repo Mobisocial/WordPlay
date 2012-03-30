@@ -83,7 +83,7 @@ public class Tile {
 	            			//int tempY = ((int) y / 21) - 1;
 	                        Tile.this.xPos = tempXPos;
 	                        Tile.this.yPos = tempYPos;
-	                        //Log.w("tile", "setting position to " + xPos + ", " + yPos);
+	                        Log.w("tile", "setting position to " + xPos + ", " + yPos);
 	            			x = tempXPos * 21 + WordPlayActivity.OFFSET_X;
 	            			y = tempYPos * 21 + WordPlayActivity.OFFSET_Y;
 	            			Tile.this.setPosition(x, y);
@@ -412,10 +412,10 @@ public class Tile {
 	
 	public Point getCoordinates() {
 		if(!showMe) { return null; }
-		if(sprite.getY() > 318) {
+		if(this.xPos == -1) {
 			return null;
 		}
-		Point p = new Point(((int) sprite.getX() / 21), ((int) sprite.getY() / 21) - 1);
-		return (p.x < 0 || p.x > 14 || p.y < 0 || p.y > 14) ? null : p;
+		Point p = new Point(this.xPos, this.yPos);
+		return p;
 	}
 }
