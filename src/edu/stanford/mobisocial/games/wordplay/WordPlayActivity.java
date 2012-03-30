@@ -1335,35 +1335,14 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 }
                 state.put(OBJ_BOARD_STATE, board);                
 
-                JSONArray racks = new JSONArray();
-
-                TileRack opponentRacks[] = new TileRack[numPlayers];// = new TileRack(this, false);
-                for(int i = 0; i < numPlayers-1; i++) {
-                    opponentRacks[i] = new TileRack(WordPlayActivity.this, false);
-                }
-                
-                JSONArray oldRacks = mMultiplayer.getLatestState().getJSONArray(OBJ_RACKS);
-                int j = 0;
-                for(int i = 0; i < numPlayers; i++) {
-                    if (i != getLocalMemberIndex()) {
-                        opponentRacks[j].fromJson(scene, getAlphabet(state), oldRacks.getJSONArray(i));
-                        j++;
-                    }
-                }
+                JSONArray racks = mMultiplayer.getLatestState().getJSONArray(OBJ_RACKS);
+                racks.put(getLocalMemberIndex(), tileRack.toJson());
+                state.put(OBJ_RACKS, racks);
 
                 tileCount.setText(bag.tilesRemaining() + "");
                 state.put(OBJ_BAG, bag.toJson());
-                
-                for(int i = 0; i < numPlayers; i++) {
-                    if (i == getLocalMemberIndex()) {
-                        racks.put(tileRack.toJson());
-                    } else {
-                        racks.put(opponentRacks[i].toJson());
-                    }
-                }
-                state.put(OBJ_RACKS, racks);
+
                 //Log.w(TAG, racks.toString());
-                
                 JSONArray scores = new JSONArray();
                 scores.put(players[0].getScore());
                 scores.put(players[1].getScore());
