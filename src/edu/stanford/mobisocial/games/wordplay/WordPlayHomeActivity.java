@@ -165,7 +165,6 @@ public class WordPlayHomeActivity extends Activity {
             }
             text.setLength(text.length() - 2);
 
-            Log.d(TAG, json.toString());
             if (json.has("state")) {
                 JSONObject state = json.optJSONObject("state");
                 if (state != null) {
