@@ -150,20 +150,48 @@ public class WordPlayHomeActivity extends Activity {
             //Log.d(TAG, "turn " + turn + " is " + myTurn + ", " + json);
 
             TextView tv = (TextView)view;
-            StringBuilder text = new StringBuilder(100)
-                .append("Game ").append(gameName).append(": ");
+            StringBuilder text = new StringBuilder(100);
+            int me = -1;
             for (int i = 0; i < members.length(); i++) {
                 DbIdentity id = mMusubi.userForGlobalId(feedUri, members.optString(i));
                 if (id != null) {
                     text.append(id.getName()).append(", ");
+                    if (id.isOwned()) {
+                        me = i;
+                    }
                 } else {
                     text.append("???, ");
                 }
             }
             text.setLength(text.length() - 2);
+
+            Log.d(TAG, json.toString());
+            if (json.has("state")) {
+                JSONObject state = json.optJSONObject("state");
+                if (state != null) {
+                    if (state.optBoolean("gameover")) {
+                        text.append("\n").append(state.optString("lastmove"));
+                    } else if (me != -1 && state.has("racks")) {
+                        /*
+                        JSONArray rack = state.optJSONArray("racks").optJSONArray(me);
+                        if (rack != null) {
+                            text.append("\n[");
+                            int len = rack.length();
+                            for (int i = 0; i < len; i++) {
+                                text.append(rack.optString(i));
+                                if (i < len-1) {
+                                    text.append(", ");
+                                } else {
+                                    text.append("]");
+                                }
+                            }
+                        }*/
+                    }
+                }
+            }
+
             if (myTurn) {
                 tv.setBackgroundColor(0xff666666);
-                text.append(". Your turn.");
             } else {
                 tv.setBackgroundColor(Color.TRANSPARENT);
             }
