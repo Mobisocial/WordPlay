@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.games.wordplay;
 
+import org.json.JSONObject;
+
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
@@ -28,15 +30,22 @@ public class NotificationReceiver extends BroadcastReceiver {
             return;
         }
 
-        String sender = obj.getSender().getName();
+        String move = "Move made in WordPlay";
+        if (obj.getJson() != null) {
+            JSONObject state = obj.getJson().optJSONObject("state");
+            if (state != null && state.has("lastmove")) {
+                move = state.optString("lastmove");       
+            }
+        }
+
         NotificationManager nm = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification notification = new Notification(R.drawable.notification, "Move made in WordPlay", System.currentTimeMillis());
+        Notification notification = new Notification(R.drawable.notification, move, System.currentTimeMillis());
         notification.flags = Notification.FLAG_AUTO_CANCEL;
 
         Intent notificationIntent = new Intent(context, WordPlayActivity.class);
         notificationIntent.setData(objUri);
         PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, 0);
-        notification.setLatestEventInfo(context, "Move made in WordPlay", sender + " made a move.", contentIntent);
+        notification.setLatestEventInfo(context, "Move made in WordPlay", move, contentIntent);
         long[] vibrate = {0,100,200,300};
         notification.vibrate = vibrate;
         nm.notify(0, notification);
