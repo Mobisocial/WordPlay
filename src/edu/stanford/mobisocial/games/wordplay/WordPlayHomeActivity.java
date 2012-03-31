@@ -172,7 +172,7 @@ public class WordPlayHomeActivity extends Activity {
                     if (state.optBoolean("gameover")) {
                         text.append("\n").append(state.optString("lastmove"));
                     } else if (me != -1 && state.has("racks")) {
-                        /*
+                        /* TODO: display nice rack.
                         JSONArray rack = state.optJSONArray("racks").optJSONArray(me);
                         if (rack != null) {
                             text.append("\n[");

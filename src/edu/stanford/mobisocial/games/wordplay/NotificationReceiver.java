@@ -22,10 +22,13 @@ public class NotificationReceiver extends BroadcastReceiver {
             return;
         }
 
-        DbObj obj = Musubi.forIntent(context, intent).objForUri(objUri);
+        Musubi musubi = Musubi.forIntent(context, intent);
+        DbObj obj = musubi.objForUri(objUri);
         if (obj.getSender().isOwned()) {
             return;
         }
+
+        String sender = obj.getSender().getName();
         NotificationManager nm = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = new Notification(R.drawable.notification, "Move made in WordPlay", System.currentTimeMillis());
         notification.flags = Notification.FLAG_AUTO_CANCEL;
@@ -33,7 +36,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         Intent notificationIntent = new Intent(context, WordPlayActivity.class);
         notificationIntent.setData(objUri);
         PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, 0);
-        notification.setLatestEventInfo(context, "Move made in WordPlay", "Someone made a move.", contentIntent);
+        notification.setLatestEventInfo(context, "Move made in WordPlay", sender + " made a move.", contentIntent);
         long[] vibrate = {0,100,200,300};
         notification.vibrate = vibrate;
         nm.notify(0, notification);
