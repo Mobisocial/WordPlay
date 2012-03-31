@@ -34,6 +34,8 @@ public class NotificationReceiver extends BroadcastReceiver {
         notificationIntent.setData(objUri);
         PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, 0);
         notification.setLatestEventInfo(context, "Move made in WordPlay", "Someone made a move.", contentIntent);
+        long[] vibrate = {0,100,200,300};
+        notification.vibrate = vibrate;
         nm.notify(0, notification);
 
         // Dont notify in Musubi

@@ -651,7 +651,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     						word += tileSpaces[wordSet[0][j].x][wordSet[0][j].y].getLetter();
     					}
     					passCount = 0;
-    					lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " played '" + word.toLowerCase() + "' for " + totalPoints + "pts";
+    					lastMove = players[mMultiplayer.getLocalMemberIndex()].getShortName() + " played '" + word.toLowerCase() + "' for " + totalPoints + "pts";
     					
     					if (tileRack.numTiles == 0) {
     						//lastMove = players[0].getShortName() + " won the game.";
@@ -804,7 +804,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         	        					}
         	        				}
 
-        	                		lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " swapped " + numTiles + " tiles";
+        	                		lastMove = players[mMultiplayer.getLocalMemberIndex()].getShortName() + " swapped " + numTiles + " tiles";
         	                		WordPlayActivity.this.takeTurn();
         	    	        		//mMultiplayer.takeTurn(mMultiplayer.getApplicationState());
         	        			}
@@ -881,7 +881,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         			           public void onClick(DialogInterface dialog, int id) {
         			                
         			        	   passCount++;
-        		            		lastMove = mMultiplayer.getUser(mMultiplayer.getLocalMemberIndex()).getName() + " passed";
+        		            		lastMove = players[mMultiplayer.getLocalMemberIndex()].getShortName() + " passed";
         		            		if (passCount >= numPlayers) {
         								//lastMove = players[0].getShortName() + " won the game.";
         								String winners = "";
