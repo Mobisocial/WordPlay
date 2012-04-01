@@ -499,10 +499,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
         titleText = new ChangeableText(70, 12, this.mFont, "Player 1 played 'quixotic' for 100 points.", "Player 1 played 'quixotic' for 100 points.".length());
         
-        player1Name = new ChangeableText(7, 463, this.nameFont, "USERNAME");
-        player2Name = new ChangeableText(87, 463, this.nameFont, "USERNAME");
-        player3Name = new ChangeableText(167, 463, this.nameFont, "USERNAME");
-        player4Name = new ChangeableText(247, 463, this.nameFont, "USERNAME");
+        player1Name = new ChangeableText(9, 463, this.nameFont, "USERNAME");
+        player2Name = new ChangeableText(89, 463, this.nameFont, "USERNAME");
+        player3Name = new ChangeableText(169, 463, this.nameFont, "USERNAME");
+        player4Name = new ChangeableText(249, 463, this.nameFont, "USERNAME");
         
         player1Score = new ChangeableText(12, 474, this.scoreFont, players[0].getScore() + "   ");
         player2Score = new ChangeableText(92, 474, this.scoreFont, players[1].getScore() + "   ");
