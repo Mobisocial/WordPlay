@@ -952,6 +952,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	    super.onResume();
 	    if (mMultiplayer != null) {
 	        mMultiplayer.enableStateUpdates();
+	        render();
 	    }
 	}
 
