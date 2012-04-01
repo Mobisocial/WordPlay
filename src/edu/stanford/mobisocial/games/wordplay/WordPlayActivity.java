@@ -1289,7 +1289,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         @Override
         protected FeedRenderable getFeedView(JSONObject arg0) {
             StringBuilder html = new StringBuilder("<html>");
-            html.append("<body style=\"width:200px\">");
+            html.append("<body style=\"width:200px;\">");
             html.append("<div style=\"font-weight:bold; text-align: center;\">Scoreboard</div>");
             html.append("<div style=\"border: 3px solid black; border-radius: 10px; padding: 5px; background:#4D5157;\">");
             for (int i = 0; i < numPlayers; i++) {
@@ -1299,7 +1299,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 } else {
                     color = "#ffffff";
                 }
-                html.append("<div style=\"width: 100px; margin-left: 10px; float: left; text-align: left; font-weight:bold; color:").append(color).append("\">").append(players[i].getShortName()).append("</div>")
+                html.append("<div style=\"width: 100px; white-space:nowrap; margin-left: 10px; float: left; text-align: left; font-weight:bold; color:").append(color).append("\">").append(players[i].getShortName()).append("</div>")
                     .append("<div style=\"width: 50px; margin-left: 10px; float: right; color: #ffffff; text-align: right;\">").append(players[i].getScore()).append(" pts</div>")
                     .append("<div style=\"clear: both;\"></div>");
             }
