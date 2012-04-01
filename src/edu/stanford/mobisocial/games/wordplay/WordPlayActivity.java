@@ -1300,7 +1300,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                     color = "#ffffff";
                 }
                 html.append("<div style=\"width: 100px; white-space:nowrap; margin-left: 10px; float: left; text-align: left; font-weight:bold; color:").append(color).append("\">").append(players[i].getShortName()).append("</div>")
-                    .append("<div style=\"width: 50px; margin-left: 10px; float: right; color: #ffffff; text-align: right;\">").append(players[i].getScore()).append(" pts</div>")
+                    .append("<div style=\"width: 50px; white-space:nowrap; margin-left: 10px; float: right; color: #ffffff; text-align: right;\">").append(players[i].getScore()).append(" pts</div>")
                     .append("<div style=\"clear: both;\"></div>");
             }
             html.append("</div><div style=\"text-align: center;\">").append(lastMove).append("</div><div style=\"text-align: center;\">");
