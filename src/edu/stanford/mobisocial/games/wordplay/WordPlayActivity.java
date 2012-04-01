@@ -478,12 +478,11 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         scene.setOnAreaTouchTraversalFrontToBack();
 
 	    mMusubi = Musubi.forIntent(this, getIntent());
-        mMultiplayer = new WordPlayMultiplayer(mMusubi.getObj());
-        mMultiplayer.enableStateUpdates();
+        mMultiplayer = new WordPlayMultiplayer(mMusubi, mMusubi.getObj());
 
         // TODO: this device may have multiple owned identities-- this could even support a localplay game.
-        JSONObject state = mMultiplayer.getLatestState();
         bag = new TileBag();
+        JSONObject state = mMultiplayer.getLatestState();
         bag.fromJson(state.optJSONArray(OBJ_BAG));
 
 		this.mScrollDetector = new SurfaceScrollDetector(this);
@@ -936,6 +935,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         scene.setOnSceneTouchListener(this);
         scene.setTouchAreaBindingEnabled(true);
 
+        mMultiplayer.enableStateUpdates();
 		return scene;
 	}
 
@@ -1281,8 +1281,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	// =========================================================== 
 
     class WordPlayMultiplayer extends TurnBasedApp {
-        public WordPlayMultiplayer(DbObj obj) {
-            super(obj);
+        public WordPlayMultiplayer(Musubi musubi, DbObj obj) {
+            super(musubi, obj);
+            this.DBG = WordPlayActivity.DBG;
         }
 
         @Override
