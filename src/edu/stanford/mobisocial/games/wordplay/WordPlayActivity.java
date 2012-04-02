@@ -1439,7 +1439,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         passCount = state.optInt("passcount");
 
         // board layout
-        JSONArray arr = mMultiplayer.getLatestState().optJSONArray(OBJ_LAYOUT);
+        JSONArray arr = state.optJSONArray(OBJ_LAYOUT);
         if (arr == null) {
             arr = jsonForBoardLayout(BoardLayout.board);
         }
