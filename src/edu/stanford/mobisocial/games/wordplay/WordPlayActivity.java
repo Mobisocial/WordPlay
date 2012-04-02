@@ -43,6 +43,7 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Window;
@@ -134,6 +135,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	
 	public boolean showingPicker;
 	public boolean gameOver;
+	private boolean mSceneLoaded;
 
 	public long lastTap;
 	
@@ -469,6 +471,13 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	}
 
 	@Override
+	protected void onCreate(Bundle pSavedInstanceState) {
+	    mMusubi = Musubi.forIntent(this, getIntent());
+        mMultiplayer = new WordPlayMultiplayer(mMusubi, mMusubi.getObj());
+
+	    super.onCreate(pSavedInstanceState);
+	}
+	@Override
 	public Scene onLoadScene() {
 	    scene = new Scene();
 	    float r = 74f/255f;
@@ -476,9 +485,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	    float b = 22f/255f;
 	    scene.setBackground(new ColorBackground(r, g, b));
         scene.setOnAreaTouchTraversalFrontToBack();
-
-	    mMusubi = Musubi.forIntent(this, getIntent());
-        mMultiplayer = new WordPlayMultiplayer(mMusubi, mMusubi.getObj());
 
         // TODO: this device may have multiple owned identities-- this could even support a localplay game.
         bag = new TileBag();
@@ -1074,9 +1080,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 		} else {
 			titleText.setText(players[mMultiplayer.getGlobalMemberCursor()].getShortName() + "'s turn");
 		}
-		
+
+		mSceneLoaded = true;
 		render();
-        
 	}
 	// ===========================================================
 	// Methods
@@ -1431,6 +1437,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
     }
 
     private void render() {
+        if (!mSceneLoaded) {
+            Log.w(TAG, "not rendering, scene not loaded.");
+            return;
+        }
     	JSONObject state = mMultiplayer.getLatestState();
     	if (DBG) Log.w(TAG, "rendering normal state " + mMultiplayer.getLatestState());
         numPlayers = mMultiplayer.getMembers().length;
