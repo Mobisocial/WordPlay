@@ -1320,7 +1320,9 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
         }
 
         private JSONObject getApplicationState() {
-            JSONObject state = getLatestState() == null ? new JSONObject() : getLatestState();
+            JSONObject state = getLatestState();
+            if (state == null) state = new JSONObject();
+
             numPlayers = getMembers().length;
             try {
                 state.put("passcount", passCount);
@@ -1337,7 +1339,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
                 }
                 state.put(OBJ_BOARD_STATE, board);                
 
-                JSONArray racks = mMultiplayer.getLatestState().getJSONArray(OBJ_RACKS);
+                JSONArray racks = state.getJSONArray(OBJ_RACKS);
                 racks.put(getLocalMemberIndex(), tileRack.toJson());
                 state.put(OBJ_RACKS, racks);
 
