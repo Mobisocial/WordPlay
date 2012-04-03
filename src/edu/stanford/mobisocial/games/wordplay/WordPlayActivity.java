@@ -1319,7 +1319,7 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             html.append("</div></body>");
 
             html.append("</html>");
-            Log.w(TAG, html.toString());
+            if (DBG) Log.w(TAG, html.toString());
             return FeedRenderable.fromHtml(html.toString());
         }
 
