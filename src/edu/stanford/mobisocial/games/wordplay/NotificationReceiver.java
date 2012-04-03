@@ -47,7 +47,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         Long parentId = obj.getParentId();
         if (parentId == null) {
             Log.e("WordPlay", "No parent found for WordPlay game state");
-            notificationIntent = null;
+            return;
         } else {
             notificationIntent.setData(Musubi.uriForItem(DbThing.OBJECT, parentId));   
         }
