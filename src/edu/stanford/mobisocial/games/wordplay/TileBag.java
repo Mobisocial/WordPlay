@@ -58,9 +58,6 @@ public class TileBag {
 		bag = new Character[original.length - 1];
 		System.arraycopy(original, 1, bag, 0, bag.length);
 
-		Log.w(TAG, Arrays.toString(original));
-		Log.w(TAG, Arrays.toString(bag));
-		
 		return tile;
 	}
 	
