@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.musubi.Musubi.DbThing;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -43,7 +44,13 @@ public class NotificationReceiver extends BroadcastReceiver {
         notification.flags = Notification.FLAG_AUTO_CANCEL;
 
         Intent notificationIntent = new Intent(context, WordPlayActivity.class);
-        notificationIntent.setData(objUri);
+        Long parentId = obj.getParentId();
+        if (parentId == null) {
+            Log.e("WordPlay", "No parent found for WordPlay game state");
+            notificationIntent = null;
+        } else {
+            notificationIntent.setData(Musubi.uriForItem(DbThing.OBJECT, parentId));   
+        }
         PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, 0);
         notification.setLatestEventInfo(context, "Move made in WordPlay", move, contentIntent);
         long[] vibrate = {0,100,200,300};

@@ -473,6 +473,10 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	@Override
 	protected void onCreate(Bundle pSavedInstanceState) {
 	    mMusubi = Musubi.forIntent(this, getIntent());
+	    DbObj objContext = mMusubi.getObj();
+	    if (!WordPlayKickoffActivity.TYPE.equals(objContext.getType())) {
+	        throw new IllegalArgumentException("Not a WordPlay game: " + objContext.getType());
+	    }
         mMultiplayer = new WordPlayMultiplayer(mMusubi, mMusubi.getObj());
 
 	    super.onCreate(pSavedInstanceState);
