@@ -478,9 +478,25 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 	        throw new IllegalArgumentException("Not a WordPlay game: " + objContext.getType());
 	    }
         mMultiplayer = new WordPlayMultiplayer(mMusubi, mMusubi.getObj());
-
+        Log.w(TAG, mMultiplayer.getLatestState().toString());
 	    super.onCreate(pSavedInstanceState);
 	}
+	
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+		setIntent(intent);
+	    mMusubi = Musubi.forIntent(this, intent);
+	    DbObj objContext = mMusubi.getObj();
+	    if (!WordPlayKickoffActivity.TYPE.equals(objContext.getType())) {
+	        throw new IllegalArgumentException("Not a WordPlay game: " + objContext.getType());
+	    }
+        mMultiplayer = new WordPlayMultiplayer(mMusubi, mMusubi.getObj());
+        Log.w(TAG, mMultiplayer.getLatestState().toString());
+
+	    super.onNewIntent(intent);
+	}
+	
 	@Override
 	public Scene onLoadScene() {
 	    scene = new Scene();
@@ -1068,7 +1084,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
             });
 		}
 		if(numPlayers < 3) {
-			Log.w(TAG, "detaching player3scoreplate");
 			player3Name.setText("");
 			player3Score.setText("");
 			runOnUpdateThread(new Runnable() {
@@ -1442,7 +1457,6 @@ public class WordPlayActivity extends BaseGameActivity  implements IScrollDetect
 
     private void render() {
         if (!mSceneLoaded) {
-            Log.w(TAG, "not rendering, scene not loaded.");
             return;
         }
     	JSONObject state = mMultiplayer.getLatestState();
